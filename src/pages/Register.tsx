@@ -11,6 +11,8 @@ import { SiteHeader } from "@/components/site-header";
 import { toast } from "@/hooks/use-toast";
 
 export default function Register() {
+  const [firstName, setFirstName] = useState("");
+  const [lastName, setLastName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -24,7 +26,7 @@ export default function Register() {
     setError(null);
 
     // Form validation
-    if (!email || !password || !confirmPassword) {
+    if (!email || !password || !confirmPassword || !firstName || !lastName) {
       setError("All fields are required");
       return;
     }
@@ -50,6 +52,12 @@ export default function Register() {
       const { data, error } = await supabase.auth.signUp({
         email,
         password,
+        options: {
+          data: {
+            first_name: firstName,
+            last_name: lastName
+          }
+        }
       });
 
       if (error) {
@@ -95,6 +103,32 @@ export default function Register() {
 
           <form className="mt-8 space-y-6" onSubmit={handleRegister}>
             <div className="space-y-4">
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                <div>
+                  <Label htmlFor="firstName">First Name</Label>
+                  <Input
+                    id="firstName"
+                    type="text"
+                    placeholder="John"
+                    value={firstName}
+                    onChange={(e) => setFirstName(e.target.value)}
+                    required
+                  />
+                </div>
+
+                <div>
+                  <Label htmlFor="lastName">Last Name</Label>
+                  <Input
+                    id="lastName"
+                    type="text"
+                    placeholder="Doe"
+                    value={lastName}
+                    onChange={(e) => setLastName(e.target.value)}
+                    required
+                  />
+                </div>
+              </div>
+
               <div>
                 <Label htmlFor="email">Email address</Label>
                 <Input
