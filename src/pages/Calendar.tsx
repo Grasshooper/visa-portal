@@ -217,29 +217,32 @@ const CalendarPage = () => {
                   </Button>
                 </div>
               </div>
-              <TabsList className="mt-2">
-                <TabsTrigger
-                  value="month"
-                  onClick={() => setView("month")}
-                  className={view === "month" ? "bg-primary text-white" : ""}
-                >
-                  Month
-                </TabsTrigger>
-                <TabsTrigger
-                  value="week"
-                  onClick={() => setView("week")}
-                  className={view === "week" ? "bg-primary text-white" : ""}
-                >
-                  Week
-                </TabsTrigger>
-                <TabsTrigger
-                  value="day"
-                  onClick={() => setView("day")}
-                  className={view === "day" ? "bg-primary text-white" : ""}
-                >
-                  Day
-                </TabsTrigger>
-              </TabsList>
+              {/* Wrap the TabsList with Tabs component */}
+              <Tabs value={view} className="mt-2">
+                <TabsList>
+                  <TabsTrigger
+                    value="month"
+                    onClick={() => setView("month")}
+                    className={view === "month" ? "bg-primary text-white" : ""}
+                  >
+                    Month
+                  </TabsTrigger>
+                  <TabsTrigger
+                    value="week"
+                    onClick={() => setView("week")}
+                    className={view === "week" ? "bg-primary text-white" : ""}
+                  >
+                    Week
+                  </TabsTrigger>
+                  <TabsTrigger
+                    value="day"
+                    onClick={() => setView("day")}
+                    className={view === "day" ? "bg-primary text-white" : ""}
+                  >
+                    Day
+                  </TabsTrigger>
+                </TabsList>
+              </Tabs>
             </CardHeader>
             <CardContent className="p-0 pl-2 pb-2 pr-2">
               <CalendarComponent
