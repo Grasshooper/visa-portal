@@ -12,7 +12,8 @@ import {
   navigationMenuTriggerStyle,
 } from "@/components/ui/navigation-menu";
 import { cn } from "@/lib/utils";
-import { ChevronRight, LogIn } from 'lucide-react';
+import { ChevronRight, LogIn, LogOut, UserPlus } from 'lucide-react';
+import { useAuth } from '@/contexts/AuthContext';
 
 const components: { title: string; href: string; description: string }[] = [
   {
@@ -68,6 +69,8 @@ const ListItem = React.forwardRef<
 ListItem.displayName = "ListItem"
 
 export function SiteHeader() {
+  const { user, signOut } = useAuth();
+
   return (
     <header className="sticky top-0 z-50 w-full backdrop-blur-md bg-background/80 border-b border-border/40 transition-all duration-200">
       <div className="container flex h-16 items-center justify-between px-4 md:px-6">
@@ -114,39 +117,76 @@ export function SiteHeader() {
           </NavigationMenu>
           
           <div className="flex items-center gap-2">
-            <Button 
-              variant="outline" 
-              size="sm" 
-              className="hidden md:flex" 
-              asChild
-            >
-              <Link to="/dashboard">
-                <LogIn className="mr-2 h-4 w-4" />
-                Sign In
-              </Link>
-            </Button>
-            <Button 
-              size="sm" 
-              className="hidden md:flex" 
-              asChild
-            >
-              <Link to="/register">
-                Get Started
-                <ChevronRight className="ml-1 h-4 w-4" />
-              </Link>
-            </Button>
+            {user ? (
+              <>
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  className="hidden md:flex" 
+                  asChild
+                >
+                  <Link to="/dashboard">
+                    Dashboard
+                  </Link>
+                </Button>
+                <Button 
+                  variant="ghost" 
+                  size="sm" 
+                  className="hidden md:flex" 
+                  onClick={() => signOut()}
+                >
+                  <LogOut className="mr-2 h-4 w-4" />
+                  Sign Out
+                </Button>
+              </>
+            ) : (
+              <>
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  className="hidden md:flex" 
+                  asChild
+                >
+                  <Link to="/login">
+                    <LogIn className="mr-2 h-4 w-4" />
+                    Sign In
+                  </Link>
+                </Button>
+                <Button 
+                  size="sm" 
+                  className="hidden md:flex" 
+                  asChild
+                >
+                  <Link to="/register">
+                    <UserPlus className="mr-2 h-4 w-4" />
+                    Register
+                  </Link>
+                </Button>
+              </>
+            )}
           </div>
         </div>
         
         <div className="flex md:hidden">
-          <Button 
-            size="sm" 
-            asChild
-          >
-            <Link to="/dashboard">
-              Sign In
-            </Link>
-          </Button>
+          {user ? (
+            <Button 
+              size="sm" 
+              variant="ghost"
+              onClick={() => signOut()}
+            >
+              <LogOut className="h-4 w-4 mr-2" />
+              Sign Out
+            </Button>
+          ) : (
+            <Button 
+              size="sm" 
+              asChild
+            >
+              <Link to="/login">
+                Sign In
+              </Link>
+            </Button>
+          )}
         </div>
       </div>
     </header>
