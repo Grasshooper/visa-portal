@@ -146,33 +146,7 @@ const Index = () => {
               </CardContent>
             </Card>
             
-            <Card className="glass-card group hover:border-primary/20 transition-all duration-300">
-              <CardHeader className="pb-2">
-                <div className="bg-primary/10 rounded-full p-2 w-10 h-10 flex items-center justify-center mb-2 text-primary">
-                  <Globe className="h-5 w-5" />
-                </div>
-                <CardTitle className="text-xl group-hover:text-primary transition-colors">Multi-Language Support</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <CardDescription className="text-muted-foreground">
-                  Break language barriers with our comprehensive translation and localization features.
-                </CardDescription>
-                <ul className="mt-4 space-y-2 text-sm">
-                  <li className="flex items-center">
-                    <Check className="mr-2 h-4 w-4 text-primary" />
-                    <span>Interface in 20+ languages</span>
-                  </li>
-                  <li className="flex items-center">
-                    <Check className="mr-2 h-4 w-4 text-primary" />
-                    <span>Document translation</span>
-                  </li>
-                  <li className="flex items-center">
-                    <Check className="mr-2 h-4 w-4 text-primary" />
-                    <span>Regional compliance settings</span>
-                  </li>
-                </ul>
-              </CardContent>
-            </Card>
+            {/* Multi-Language Support card removed */}
             
             <Card className="glass-card group hover:border-primary/20 transition-all duration-300">
               <CardHeader className="pb-2">
