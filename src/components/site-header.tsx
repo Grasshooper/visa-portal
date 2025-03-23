@@ -101,17 +101,13 @@ export function SiteHeader() {
                 </NavigationMenuContent>
               </NavigationMenuItem>
               <NavigationMenuItem>
-                <Link to="/about" legacyBehavior passHref>
-                  <NavigationMenuLink className={navigationMenuTriggerStyle()}>
-                    About
-                  </NavigationMenuLink>
+                <Link to="/about" className={navigationMenuTriggerStyle()}>
+                  About
                 </Link>
               </NavigationMenuItem>
               <NavigationMenuItem>
-                <Link to="/contact" legacyBehavior passHref>
-                  <NavigationMenuLink className={navigationMenuTriggerStyle()}>
-                    Contact
-                  </NavigationMenuLink>
+                <Link to="/contact" className={navigationMenuTriggerStyle()}>
+                  Contact
                 </Link>
               </NavigationMenuItem>
             </NavigationMenuList>

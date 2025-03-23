@@ -108,7 +108,7 @@ export function AppSidebar() {
                 <SidebarMenuItem key={item.title}>
                   <SidebarMenuButton 
                     asChild
-                    active={isActive(item.href)}
+                    data-active={isActive(item.href)}
                     className={cn(
                       "transition-all duration-200 justify-start gap-3 h-10",
                       isActive(item.href) && "font-medium"
@@ -138,7 +138,7 @@ export function AppSidebar() {
                 <SidebarMenuItem key={item.title}>
                   <SidebarMenuButton 
                     asChild
-                    active={isActive(item.href)}
+                    data-active={isActive(item.href)}
                     className={cn(
                       "transition-all duration-200 justify-start gap-3 h-10",
                       isActive(item.href) && "font-medium"

@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { DashboardLayout } from "@/components/dashboard-layout";
 import { Button } from "@/components/ui/button";
@@ -26,7 +25,7 @@ import {
   ExternalLink,
   FileArchive,
   FileImage,
-  FilePdf,
+  File as FileIcon,
   FileText,
   FileType,
   Filter,
@@ -64,7 +63,7 @@ const documents: Document[] = [
     modified: "Aug 5, 2023",
     status: "Valid",
     owner: "Emma Wilson",
-    icon: FilePdf,
+    icon: FileIcon,
   },
   {
     id: "DOC-0011",
@@ -75,7 +74,7 @@ const documents: Document[] = [
     modified: "Aug 2, 2023",
     status: "Pending",
     owner: "Alex Johnson",
-    icon: FilePdf,
+    icon: FileIcon,
   },
   {
     id: "DOC-0010",
@@ -108,7 +107,7 @@ const documents: Document[] = [
     modified: "Jul 25, 2023",
     status: "Pending",
     owner: "Olivia Martinez",
-    icon: FilePdf,
+    icon: FileIcon,
   },
   {
     id: "DOC-0007",
@@ -141,7 +140,7 @@ const documents: Document[] = [
     modified: "Jul 10, 2023",
     status: "Expired",
     owner: "Ethan Brown",
-    icon: FilePdf,
+    icon: FileIcon,
   },
 ];
 
