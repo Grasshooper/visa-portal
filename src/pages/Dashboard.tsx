@@ -7,6 +7,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { BarChart3, Calendar, FileText, Folder, MoreHorizontal, Plus, RefreshCw, Users } from "lucide-react";
+import { Link } from "react-router-dom";
 import {
   AreaChart,
   Area,
@@ -148,9 +149,11 @@ const Dashboard = () => {
               <RefreshCw className="h-3.5 w-3.5" />
               <span className="hidden sm:inline">Refresh</span>
             </Button>
-            <Button size="sm" className="h-8 gap-1">
-              <Plus className="h-3.5 w-3.5" />
-              <span>New Case</span>
+            <Button size="sm" className="h-8 gap-1" asChild>
+              <Link to="/cases/new">
+                <Plus className="h-3.5 w-3.5" />
+                <span>New Case</span>
+              </Link>
             </Button>
           </div>
         </div>
