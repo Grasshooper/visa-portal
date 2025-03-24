@@ -9,6 +9,114 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      document_types: {
+        Row: {
+          category: string
+          created_at: string
+          description: string | null
+          id: string
+          metadata_fields: Json | null
+          name: string
+          required_formats: string[]
+          requirements: string | null
+          updated_at: string
+        }
+        Insert: {
+          category: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          metadata_fields?: Json | null
+          name: string
+          required_formats: string[]
+          requirements?: string | null
+          updated_at?: string
+        }
+        Update: {
+          category?: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          metadata_fields?: Json | null
+          name?: string
+          required_formats?: string[]
+          requirements?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      documents: {
+        Row: {
+          case_id: string | null
+          document_type_id: string
+          expires_at: string | null
+          file_name: string
+          file_path: string
+          file_size: number
+          file_type: string
+          id: string
+          metadata: Json | null
+          notes: string | null
+          original_document_id: string | null
+          status: string | null
+          updated_at: string
+          uploaded_at: string
+          user_id: string
+          version: number
+        }
+        Insert: {
+          case_id?: string | null
+          document_type_id: string
+          expires_at?: string | null
+          file_name: string
+          file_path: string
+          file_size: number
+          file_type: string
+          id?: string
+          metadata?: Json | null
+          notes?: string | null
+          original_document_id?: string | null
+          status?: string | null
+          updated_at?: string
+          uploaded_at?: string
+          user_id: string
+          version?: number
+        }
+        Update: {
+          case_id?: string | null
+          document_type_id?: string
+          expires_at?: string | null
+          file_name?: string
+          file_path?: string
+          file_size?: number
+          file_type?: string
+          id?: string
+          metadata?: Json | null
+          notes?: string | null
+          original_document_id?: string | null
+          status?: string | null
+          updated_at?: string
+          uploaded_at?: string
+          user_id?: string
+          version?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "documents_document_type_id_fkey"
+            columns: ["document_type_id"]
+            isOneToOne: false
+            referencedRelation: "document_types"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "documents_original_document_id_fkey"
+            columns: ["original_document_id"]
+            isOneToOne: false
+            referencedRelation: "documents"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       organization_invites: {
         Row: {
           created_at: string
