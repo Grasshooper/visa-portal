@@ -7,14 +7,14 @@ import {
 } from "@supabase/supabase-js";
 import type { Database } from "./types";
 
-// Get environment variables (should be defined in .env file)
-const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL || "";
-const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY || "";
+// Supabase URLs and keys
+const SUPABASE_URL = "https://cfmuztvmdkbmbwzrohji.supabase.co";
+const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNmbXV6dHZtZGtibWJ3enJvaGppIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDI3MzQxNzAsImV4cCI6MjA1ODMxMDE3MH0.qQsBZA_bbxzW8Qb5XkTi2xvr5aYN2u6iJ7LSsUMWvLM";
 
 // Validate environment variables are set
 if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
   console.error(
-    "Missing Supabase environment variables. Check your .env file."
+    "Missing Supabase configuration. Check your configuration."
   );
 }
 
