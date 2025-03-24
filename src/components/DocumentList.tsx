@@ -44,6 +44,7 @@ import {
 } from "@/components/ui/dialog";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { useToast } from "@/hooks/use-toast";
+import { Json } from "@/integrations/supabase/types";
 
 // Rename this to avoid conflict with DOM Document
 interface DocumentItem {
@@ -117,14 +118,14 @@ export function DocumentList() {
     );
   });
 
-  const handleViewDocument = async (document: DocumentItem) => {
+  const handleViewDocument = async (documentItem: DocumentItem) => {
     try {
-      setSelectedDocument(document);
+      setSelectedDocument(documentItem);
       
       // Get signedURL for viewing the document
       const { data, error } = await supabase.storage
         .from("case_documents")
-        .createSignedUrl(document.file_path, 60); // 60 seconds expiry
+        .createSignedUrl(documentItem.file_path, 60); // 60 seconds expiry
         
       if (error) throw error;
       
@@ -141,20 +142,20 @@ export function DocumentList() {
     }
   };
 
-  const handleDownloadDocument = async (document: DocumentItem) => {
+  const handleDownloadDocument = async (documentItem: DocumentItem) => {
     try {
       // Get signedURL for downloading the document
       const { data, error } = await supabase.storage
         .from("case_documents")
-        .createSignedUrl(document.file_path, 60); // 60 seconds expiry
+        .createSignedUrl(documentItem.file_path, 60); // 60 seconds expiry
         
       if (error) throw error;
       
       if (data?.signedUrl) {
         // Create an anchor element and trigger download
-        const a = document.createElement("a") as HTMLAnchorElement;
+        const a = document.createElement("a");
         a.href = data.signedUrl;
-        a.download = document.file_name;
+        a.download = documentItem.file_name;
         document.body.appendChild(a);
         a.click();
         document.body.removeChild(a);

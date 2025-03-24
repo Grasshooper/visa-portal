@@ -44,6 +44,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
+import { Textarea } from "@/components/ui/textarea";
 
 interface DocumentTypeMetadataFields {
   fields: string[];
@@ -113,12 +114,37 @@ export function DocumentUpload() {
 
         if (error) throw error;
 
-        const transformedData = data.map((item) => ({
-          ...item,
-          metadata_fields: item.metadata_fields as unknown as DocumentTypeMetadataFields
-        })) as DocumentType[];
+        const transformedData = data.map((item) => {
+          let metadataFields: DocumentTypeMetadataFields;
+          
+          if (typeof item.metadata_fields === 'string') {
+            try {
+              metadataFields = JSON.parse(item.metadata_fields) as DocumentTypeMetadataFields;
+            } catch (e) {
+              metadataFields = { fields: [] };
+            }
+          } 
+          else if (item.metadata_fields && typeof item.metadata_fields === 'object') {
+            metadataFields = item.metadata_fields as unknown as DocumentTypeMetadataFields;
+          } 
+          else {
+            metadataFields = { fields: [] };
+          }
+          
+          return {
+            ...item,
+            metadata_fields: metadataFields
+          };
+        }) as DocumentType[];
 
         setDocumentTypes(transformedData);
+
+        if (form.getValues().documentTypeId) {
+          const selected = transformedData.find(dt => dt.id === form.getValues().documentTypeId);
+          if (selected) {
+            setSelectedDocumentType(selected);
+          }
+        }
 
         const groupedByCategory: DocumentTypesByCategory = {};
         transformedData.forEach((docType) => {
@@ -136,7 +162,16 @@ export function DocumentUpload() {
     };
 
     fetchDocumentTypes();
-  }, []);
+  }, [form]);
+
+  useEffect(() => {
+    if (form.getValues().documentTypeId) {
+      const selected = documentTypes.find(dt => dt.id === form.getValues().documentTypeId);
+      if (selected) {
+        setSelectedDocumentType(selected);
+      }
+    }
+  }, [documentTypes, form]);
 
   const handleFileChange = (e: ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
@@ -510,8 +545,8 @@ export function DocumentUpload() {
                                           !field.value && "text-muted-foreground"
                                         )}
                                       >
-                                        {field.value ? (
-                                          format(field.value as Date, "PPP")
+                                        {field.value instanceof Date ? (
+                                          format(field.value, "PPP")
                                         ) : (
                                           <span>Pick a date</span>
                                         )}
@@ -522,9 +557,10 @@ export function DocumentUpload() {
                                   <PopoverContent className="w-auto p-0" align="start">
                                     <Calendar
                                       mode="single"
-                                      selected={field.value as Date}
+                                      selected={field.value instanceof Date ? field.value : undefined}
                                       onSelect={field.onChange}
                                       initialFocus
+                                      className="pointer-events-auto"
                                     />
                                   </PopoverContent>
                                 </Popover>
@@ -560,7 +596,10 @@ export function DocumentUpload() {
                     <FormItem>
                       <FormLabel>Notes (Optional)</FormLabel>
                       <FormControl>
-                        <Input {...field} placeholder="Add any additional notes about this document" />
+                        <Textarea 
+                          {...field} 
+                          placeholder="Add any additional notes about this document" 
+                        />
                       </FormControl>
                       <FormDescription>
                         Optional notes for your reference or for the immigration team.
