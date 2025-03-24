@@ -1,3 +1,4 @@
+
 import { useState, useEffect, ChangeEvent } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
@@ -46,10 +47,12 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
 
+// Define the interface for document type metadata fields
 interface DocumentTypeMetadataFields {
   fields: string[];
 }
 
+// Define the DocumentType interface
 interface DocumentType {
   id: string;
   category: string;
@@ -114,6 +117,7 @@ export function DocumentUpload() {
 
         if (error) throw error;
 
+        // Transform the data to ensure metadata_fields has the correct structure
         const transformedData = data.map((item) => {
           let metadataFields: DocumentTypeMetadataFields;
           
@@ -125,7 +129,12 @@ export function DocumentUpload() {
             }
           } 
           else if (item.metadata_fields && typeof item.metadata_fields === 'object') {
-            metadataFields = item.metadata_fields as unknown as DocumentTypeMetadataFields;
+            // Handle the case where metadata_fields is already an object
+            metadataFields = {
+              fields: Array.isArray((item.metadata_fields as any).fields) 
+                ? (item.metadata_fields as any).fields 
+                : []
+            };
           } 
           else {
             metadataFields = { fields: [] };
@@ -146,6 +155,7 @@ export function DocumentUpload() {
           }
         }
 
+        // Group document types by category
         const groupedByCategory: DocumentTypesByCategory = {};
         transformedData.forEach((docType) => {
           if (!groupedByCategory[docType.category]) {
@@ -577,7 +587,11 @@ export function DocumentUpload() {
                               <FormItem>
                                 <FormLabel>{fieldLabel}</FormLabel>
                                 <FormControl>
-                                  <Input {...field} />
+                                  {/* We need to convert the field value to string if it's a Date */}
+                                  <Input 
+                                    {...field} 
+                                    value={field.value instanceof Date ? format(field.value, 'yyyy-MM-dd') : field.value || ''}
+                                  />
                                 </FormControl>
                                 <FormMessage />
                               </FormItem>
