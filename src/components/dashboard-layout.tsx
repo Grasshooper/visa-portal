@@ -42,7 +42,7 @@ export function DashboardLayout({ children, title = "Dashboard" }: DashboardLayo
         </header>
         
         <main className="flex-1 overflow-auto p-4 lg:p-6">
-          <div className="mx-auto max-w-7xl">
+          <div className="mx-auto max-w-7xl w-full">
             {children}
           </div>
         </main>

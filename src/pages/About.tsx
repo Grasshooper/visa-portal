@@ -1,5 +1,6 @@
 
 import { SiteHeader } from "@/components/site-header";
+import { SiteFooter } from "@/components/site-footer";
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
 
@@ -7,7 +8,7 @@ export default function About() {
   return (
     <div className="flex min-h-screen flex-col">
       <SiteHeader />
-      <main className="flex-1 container max-w-4xl py-12 px-4 sm:px-6 lg:px-8">
+      <main className="flex-1 container max-w-4xl py-12 px-4 sm:px-6 lg:px-8 mx-auto">
         <div className="space-y-8">
           <div className="text-center">
             <h1 className="text-3xl font-bold tracking-tight text-gray-900 dark:text-gray-100 sm:text-4xl">
@@ -77,6 +78,7 @@ export default function About() {
           </div>
         </div>
       </main>
+      <SiteFooter />
     </div>
   );
 }
