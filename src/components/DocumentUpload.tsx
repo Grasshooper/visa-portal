@@ -1,7 +1,7 @@
-
 import { useState, useEffect, ChangeEvent } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
+import { Json } from "@/integrations/supabase/types";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -45,6 +45,10 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 
+interface DocumentTypeMetadataFields {
+  fields: string[];
+}
+
 interface DocumentType {
   id: string;
   category: string;
@@ -52,9 +56,9 @@ interface DocumentType {
   description: string;
   required_formats: string[];
   requirements: string;
-  metadata_fields: {
-    fields: string[];
-  };
+  metadata_fields: DocumentTypeMetadataFields;
+  created_at?: string;
+  updated_at?: string;
 }
 
 type DocumentTypesByCategory = {
@@ -63,7 +67,6 @@ type DocumentTypesByCategory = {
 
 const MAX_FILE_SIZE = 20 * 1024 * 1024; // 20MB
 
-// Create a complex form schema with Zod that dynamically updates based on selected document type
 const baseSchema = z.object({
   documentTypeId: z.string().min(1, "Document type is required"),
   file: z
@@ -90,7 +93,6 @@ export function DocumentUpload() {
   const [error, setError] = useState<string | null>(null);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
 
-  // Initialize the form
   const form = useForm<FormValues>({
     resolver: zodResolver(baseSchema),
     defaultValues: {
@@ -100,7 +102,6 @@ export function DocumentUpload() {
     },
   });
   
-  // Fetch document types from the database
   useEffect(() => {
     const fetchDocumentTypes = async () => {
       try {
@@ -112,11 +113,15 @@ export function DocumentUpload() {
 
         if (error) throw error;
 
-        setDocumentTypes(data || []);
+        const transformedData = data.map((item) => ({
+          ...item,
+          metadata_fields: item.metadata_fields as unknown as DocumentTypeMetadataFields
+        })) as DocumentType[];
 
-        // Group document types by category
+        setDocumentTypes(transformedData);
+
         const groupedByCategory: DocumentTypesByCategory = {};
-        data.forEach((docType: DocumentType) => {
+        transformedData.forEach((docType) => {
           if (!groupedByCategory[docType.category]) {
             groupedByCategory[docType.category] = [];
           }
@@ -132,19 +137,6 @@ export function DocumentUpload() {
 
     fetchDocumentTypes();
   }, []);
-
-  // When document type changes, update the selectedDocumentType
-  useEffect(() => {
-    const subscription = form.watch((value, { name }) => {
-      if (name === "documentTypeId" && value.documentTypeId) {
-        const selected = documentTypes.find(
-          (dt) => dt.id === value.documentTypeId
-        );
-        setSelectedDocumentType(selected || null);
-      }
-    });
-    return () => subscription.unsubscribe();
-  }, [form, documentTypes]);
 
   const handleFileChange = (e: ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
@@ -193,7 +185,7 @@ export function DocumentUpload() {
       return false;
     });
   };
-  
+
   const handleSubmit = async (values: FormValues) => {
     if (!user) {
       toast({
@@ -226,7 +218,6 @@ export function DocumentUpload() {
     setError(null);
 
     try {
-      // Format any date fields in metadata
       const formattedMetadata: Record<string, any> = {};
       if (values.metadata) {
         Object.entries(values.metadata).forEach(([key, value]) => {
@@ -238,12 +229,10 @@ export function DocumentUpload() {
         });
       }
 
-      // Create a unique file path using user ID and timestamp
       const fileExtension = values.file.name.split(".").pop();
       const timestamp = Date.now();
       const filePath = `${user.id}/${values.documentTypeId}_${timestamp}.${fileExtension}`;
 
-      // Upload the file to Supabase Storage
       const { data: uploadData, error: uploadError } = await supabase.storage
         .from("case_documents")
         .upload(filePath, values.file, {
@@ -253,7 +242,6 @@ export function DocumentUpload() {
 
       if (uploadError) throw uploadError;
 
-      // Insert the document record in the database
       const { data: documentData, error: documentError } = await supabase
         .from("documents")
         .insert({
@@ -271,7 +259,6 @@ export function DocumentUpload() {
 
       if (documentError) throw documentError;
 
-      // Reset form and show success message
       form.reset();
       setSelectedFile(null);
       toast({
@@ -339,7 +326,6 @@ export function DocumentUpload() {
                             <Select
                               onValueChange={(value) => {
                                 field.onChange(value);
-                                // Reset any metadata values
                                 form.setValue("metadata", {});
                               }}
                               value={field.value}
@@ -374,7 +360,6 @@ export function DocumentUpload() {
                       <Select
                         onValueChange={(value) => {
                           field.onChange(value);
-                          // Reset any metadata values
                           form.setValue("metadata", {});
                         }}
                         value={field.value}
@@ -495,7 +480,6 @@ export function DocumentUpload() {
                   )}
                 />
 
-                {/* Document Metadata Fields based on selected document type */}
                 {selectedDocumentType?.metadata_fields?.fields?.length > 0 && (
                   <div className="space-y-4">
                     <h4 className="text-sm font-medium">Document Information</h4>

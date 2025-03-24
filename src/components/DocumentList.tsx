@@ -45,7 +45,8 @@ import {
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { useToast } from "@/hooks/use-toast";
 
-interface Document {
+// Rename this to avoid conflict with DOM Document
+interface DocumentItem {
   id: string;
   file_name: string;
   file_type: string;
@@ -65,11 +66,11 @@ interface Document {
 export function DocumentList() {
   const { user } = useAuth();
   const { toast } = useToast();
-  const [documents, setDocuments] = useState<Document[]>([]);
+  const [documents, setDocuments] = useState<DocumentItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
   const [error, setError] = useState<string | null>(null);
-  const [selectedDocument, setSelectedDocument] = useState<Document | null>(null);
+  const [selectedDocument, setSelectedDocument] = useState<DocumentItem | null>(null);
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [deletingId, setDeletingId] = useState<string | null>(null);
 
@@ -116,7 +117,7 @@ export function DocumentList() {
     );
   });
 
-  const handleViewDocument = async (document: Document) => {
+  const handleViewDocument = async (document: DocumentItem) => {
     try {
       setSelectedDocument(document);
       
@@ -140,7 +141,7 @@ export function DocumentList() {
     }
   };
 
-  const handleDownloadDocument = async (document: Document) => {
+  const handleDownloadDocument = async (document: DocumentItem) => {
     try {
       // Get signedURL for downloading the document
       const { data, error } = await supabase.storage
@@ -151,7 +152,7 @@ export function DocumentList() {
       
       if (data?.signedUrl) {
         // Create an anchor element and trigger download
-        const a = document.createElement("a");
+        const a = document.createElement("a") as HTMLAnchorElement;
         a.href = data.signedUrl;
         a.download = document.file_name;
         document.body.appendChild(a);

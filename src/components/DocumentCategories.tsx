@@ -1,6 +1,7 @@
 
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { Json } from "@/integrations/supabase/types";
 import {
   Accordion,
   AccordionContent,
@@ -24,6 +25,11 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 
+// Define the correct structure for metadata_fields
+interface DocumentTypeMetadataFields {
+  fields: string[];
+}
+
 interface DocumentType {
   id: string;
   category: string;
@@ -31,9 +37,9 @@ interface DocumentType {
   description: string;
   required_formats: string[];
   requirements: string;
-  metadata_fields: {
-    fields: string[];
-  };
+  metadata_fields: DocumentTypeMetadataFields;
+  created_at?: string;
+  updated_at?: string;
 }
 
 type DocumentTypesByCategory = {
@@ -57,9 +63,15 @@ export function DocumentCategories() {
 
         if (error) throw error;
 
-        // Group document types by category
+        // Group document types by category and transform Json to correct type
         const groupedByCategory: DocumentTypesByCategory = {};
-        data.forEach((docType: DocumentType) => {
+        data.forEach((rawDocType) => {
+          // Parse JSON metadata_fields
+          const docType: DocumentType = {
+            ...rawDocType,
+            metadata_fields: rawDocType.metadata_fields as unknown as DocumentTypeMetadataFields
+          };
+
           if (!groupedByCategory[docType.category]) {
             groupedByCategory[docType.category] = [];
           }

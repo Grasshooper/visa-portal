@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { DashboardLayout } from "@/components/dashboard-layout";
 import { DocumentUpload } from "@/components/DocumentUpload";
@@ -51,6 +50,7 @@ const Documents = () => {
     fetchDocumentCount();
   }, [user]);
 
+  // Handle tab changes
   const handleTabChange = (value: string) => {
     setActiveTab(value);
   };
