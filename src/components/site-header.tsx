@@ -1,6 +1,5 @@
-
-import React from 'react';
-import { Link } from 'react-router-dom';
+import React from "react";
+import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import {
   NavigationMenu,
@@ -12,8 +11,8 @@ import {
   navigationMenuTriggerStyle,
 } from "@/components/ui/navigation-menu";
 import { cn } from "@/lib/utils";
-import { ChevronRight, LogIn, LogOut, UserPlus } from 'lucide-react';
-import { useAuth } from '@/contexts/AuthContext';
+import { ChevronRight, LogIn, LogOut, UserPlus } from "lucide-react";
+import { useAuth } from "@/contexts/AuthContext";
 
 const components: { title: string; href: string; description: string }[] = [
   {
@@ -40,7 +39,7 @@ const components: { title: string; href: string; description: string }[] = [
     description:
       "Expert legal advice and consultation from experienced immigration professionals.",
   },
-]
+];
 
 const ListItem = React.forwardRef<
   React.ElementRef<"a">,
@@ -64,9 +63,9 @@ const ListItem = React.forwardRef<
         </a>
       </NavigationMenuLink>
     </li>
-  )
-})
-ListItem.displayName = "ListItem"
+  );
+});
+ListItem.displayName = "ListItem";
 
 export function SiteHeader() {
   const { user, signOut } = useAuth();
@@ -74,16 +73,16 @@ export function SiteHeader() {
   return (
     <header className="sticky top-0 z-50 w-full backdrop-blur-md bg-background/80 border-b border-border/40 transition-all duration-200">
       <div className="container flex h-16 items-center justify-between px-4 md:px-6">
-        <Link 
-          to="/" 
+        <Link
+          to="/"
           className="flex items-center gap-2 font-semibold text-lg tracking-tight transition-colors hover:text-primary"
         >
-          <div className="h-8 w-8 rounded-full bg-primary flex items-center justify-center text-primary-foreground font-bold">
-            IM
+          <div className="h-10 w-10 rounded-full bg-primary flex items-center justify-center text-primary-foreground font-bold">
+            v4U
           </div>
-          <span>ImmigrationManager</span>
+          <span>visa4U</span>
         </Link>
-        
+
         <div className="hidden md:flex items-center gap-6">
           <NavigationMenu>
             <NavigationMenuList>
@@ -115,24 +114,22 @@ export function SiteHeader() {
               </NavigationMenuItem>
             </NavigationMenuList>
           </NavigationMenu>
-          
+
           <div className="flex items-center gap-2">
             {user ? (
               <>
-                <Button 
-                  variant="outline" 
-                  size="sm" 
-                  className="hidden md:flex" 
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="hidden md:flex"
                   asChild
                 >
-                  <Link to="/dashboard">
-                    Dashboard
-                  </Link>
+                  <Link to="/dashboard">Dashboard</Link>
                 </Button>
-                <Button 
-                  variant="ghost" 
-                  size="sm" 
-                  className="hidden md:flex" 
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="hidden md:flex"
                   onClick={() => signOut()}
                 >
                   <LogOut className="mr-2 h-4 w-4" />
@@ -141,10 +138,10 @@ export function SiteHeader() {
               </>
             ) : (
               <>
-                <Button 
-                  variant="outline" 
-                  size="sm" 
-                  className="hidden md:flex" 
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="hidden md:flex"
                   asChild
                 >
                   <Link to="/login">
@@ -152,11 +149,7 @@ export function SiteHeader() {
                     Sign In
                   </Link>
                 </Button>
-                <Button 
-                  size="sm" 
-                  className="hidden md:flex" 
-                  asChild
-                >
+                <Button size="sm" className="hidden md:flex" asChild>
                   <Link to="/register">
                     <UserPlus className="mr-2 h-4 w-4" />
                     Register
@@ -166,29 +159,20 @@ export function SiteHeader() {
             )}
           </div>
         </div>
-        
+
         <div className="flex md:hidden">
           {user ? (
-            <Button 
-              size="sm" 
-              variant="ghost"
-              onClick={() => signOut()}
-            >
+            <Button size="sm" variant="ghost" onClick={() => signOut()}>
               <LogOut className="h-4 w-4 mr-2" />
               Sign Out
             </Button>
           ) : (
-            <Button 
-              size="sm" 
-              asChild
-            >
-              <Link to="/login">
-                Sign In
-              </Link>
+            <Button size="sm" asChild>
+              <Link to="/login">Sign In</Link>
             </Button>
           )}
         </div>
       </div>
     </header>
-  )
+  );
 }
