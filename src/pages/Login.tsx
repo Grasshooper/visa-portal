@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { SiteHeader } from "@/components/site-header";
+import { SiteFooter } from "@/components/site-footer";
 import { toast } from "@/hooks/use-toast";
 
 export default function Login() {
@@ -55,7 +56,7 @@ export default function Login() {
     <div className="flex min-h-screen flex-col">
       <SiteHeader />
       <main className="flex-1 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
-        <div className="w-full max-w-md space-y-8">
+        <div className="w-full max-w-md space-y-8 mx-auto">
           <div className="text-center">
             <h1 className="text-2xl font-bold tracking-tight text-gray-900 dark:text-gray-100">
               Sign in to your account
@@ -115,6 +116,7 @@ export default function Login() {
           </form>
         </div>
       </main>
+      <SiteFooter />
     </div>
   );
 }

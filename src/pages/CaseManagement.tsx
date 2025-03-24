@@ -1,4 +1,3 @@
-
 import { DashboardLayout } from "@/components/dashboard-layout";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -34,6 +33,7 @@ import {
   Search,
   SlidersHorizontal,
 } from "lucide-react";
+import { Link } from "react-router-dom";
 
 const cases = [
   {
@@ -168,9 +168,11 @@ const CaseManagement = () => {
               <Download className="h-3.5 w-3.5" />
               <span className="hidden sm:inline">Export</span>
             </Button>
-            <Button size="sm" className="h-8 gap-1">
-              <Plus className="h-3.5 w-3.5" />
-              <span>New Case</span>
+            <Button size="sm" className="h-8 gap-1" asChild>
+              <Link to="/cases/new">
+                <Plus className="h-3.5 w-3.5" />
+                <span>New Case</span>
+              </Link>
             </Button>
           </div>
         </div>
