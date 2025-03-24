@@ -1,3 +1,4 @@
+
 // src/components/user-nav.tsx
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
@@ -11,13 +12,15 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Link, useNavigate } from "react-router-dom";
-import { LogOut, Settings, User, Building, Users } from "lucide-react";
+import { LogOut, Settings, User, Building, Users, HelpCircle } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useState } from "react";
+import { UserJourneyDialog } from "@/components/user-journey-dialog";
 
 export function UserNav() {
   const { user, profile, signOut } = useAuth();
   const [isSigningOut, setIsSigningOut] = useState(false);
+  const [showJourney, setShowJourney] = useState(false);
   const navigate = useNavigate();
 
   const getInitials = (): string => {
@@ -53,89 +56,99 @@ export function UserNav() {
   };
 
   return (
-    <DropdownMenu>
-      <DropdownMenuTrigger asChild>
-        <Button variant="ghost" className="relative h-8 w-8 rounded-full">
-          <Avatar className="h-8 w-8">
-            <AvatarImage src="/placeholder.svg" alt={fullName} />
-            <AvatarFallback>{getInitials()}</AvatarFallback>
-          </Avatar>
-        </Button>
-      </DropdownMenuTrigger>
-      <DropdownMenuContent className="w-56" align="end" forceMount>
-        <DropdownMenuLabel className="font-normal">
-          <div className="flex flex-col space-y-1">
-            <p className="text-sm font-medium leading-none">{fullName}</p>
-            <p className="text-xs leading-none text-muted-foreground">
-              {user?.email}
-            </p>
-            <p className="text-xs text-muted-foreground">Role: {userRole}</p>
-          </div>
-        </DropdownMenuLabel>
-        <DropdownMenuSeparator />
-        <DropdownMenuGroup>
-          <DropdownMenuItem asChild>
-            <Link
-              to="/profile"
+    <>
+      <UserJourneyDialog open={showJourney} onOpenChange={setShowJourney} />
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <Button variant="ghost" className="relative h-8 w-8 rounded-full">
+            <Avatar className="h-8 w-8">
+              <AvatarImage src="/placeholder.svg" alt={fullName} />
+              <AvatarFallback>{getInitials()}</AvatarFallback>
+            </Avatar>
+          </Button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent className="w-56" align="end" forceMount>
+          <DropdownMenuLabel className="font-normal">
+            <div className="flex flex-col space-y-1">
+              <p className="text-sm font-medium leading-none">{fullName}</p>
+              <p className="text-xs leading-none text-muted-foreground">
+                {user?.email}
+              </p>
+              <p className="text-xs text-muted-foreground">Role: {userRole}</p>
+            </div>
+          </DropdownMenuLabel>
+          <DropdownMenuSeparator />
+          <DropdownMenuGroup>
+            <DropdownMenuItem asChild>
+              <Link
+                to="/profile"
+                className="cursor-pointer flex w-full items-center"
+              >
+                <User className="mr-2 h-4 w-4" />
+                <span>Profile</span>
+              </Link>
+            </DropdownMenuItem>
+            <DropdownMenuItem 
+              onClick={() => setShowJourney(true)}
               className="cursor-pointer flex w-full items-center"
             >
-              <User className="mr-2 h-4 w-4" />
-              <span>Profile</span>
-            </Link>
+              <HelpCircle className="mr-2 h-4 w-4" />
+              <span>View User Journey</span>
+            </DropdownMenuItem>
+            {profile?.role === "representative" && !profile?.organization_id && (
+              <DropdownMenuItem asChild>
+                <Link
+                  to="/create-organization"
+                  className="cursor-pointer flex w-full items-center"
+                >
+                  <Building className="mr-2 h-4 w-4" />
+                  <span>Create Organization</span>
+                </Link>
+              </DropdownMenuItem>
+            )}
+            {profile?.is_organization_admin && (
+              <DropdownMenuItem asChild>
+                <Link
+                  to="/organization"
+                  className="cursor-pointer flex w-full items-center"
+                >
+                  <Building className="mr-2 h-4 w-4" />
+                  <span>Organization</span>
+                </Link>
+              </DropdownMenuItem>
+            )}
+            {profile?.is_organization_admin && (
+              <DropdownMenuItem asChild>
+                <Link
+                  to="/organization/members"
+                  className="cursor-pointer flex w-full items-center"
+                >
+                  <Users className="mr-2 h-4 w-4" />
+                  <span>Members</span>
+                </Link>
+              </DropdownMenuItem>
+            )}
+            <DropdownMenuItem asChild>
+              <Link
+                to="/settings"
+                className="cursor-pointer flex w-full items-center"
+              >
+                <Settings className="mr-2 h-4 w-4" />
+                <span>Settings</span>
+              </Link>
+            </DropdownMenuItem>
+          </DropdownMenuGroup>
+          <DropdownMenuSeparator />
+          <DropdownMenuItem
+            onClick={handleSignOut}
+            disabled={isSigningOut}
+            className="cursor-pointer flex w-full items-center text-red-500 focus:text-red-500"
+          >
+            <LogOut className="mr-2 h-4 w-4" />
+            <span>{isSigningOut ? "Signing out..." : "Log out"}</span>
           </DropdownMenuItem>
-          {profile?.role === "representative" && !profile?.organization_id && (
-            <DropdownMenuItem asChild>
-              <Link
-                to="/create-organization"
-                className="cursor-pointer flex w-full items-center"
-              >
-                <Building className="mr-2 h-4 w-4" />
-                <span>Create Organization</span>
-              </Link>
-            </DropdownMenuItem>
-          )}
-          {profile?.is_organization_admin && (
-            <DropdownMenuItem asChild>
-              <Link
-                to="/organization"
-                className="cursor-pointer flex w-full items-center"
-              >
-                <Building className="mr-2 h-4 w-4" />
-                <span>Organization</span>
-              </Link>
-            </DropdownMenuItem>
-          )}
-          {profile?.is_organization_admin && (
-            <DropdownMenuItem asChild>
-              <Link
-                to="/organization/members"
-                className="cursor-pointer flex w-full items-center"
-              >
-                <Users className="mr-2 h-4 w-4" />
-                <span>Members</span>
-              </Link>
-            </DropdownMenuItem>
-          )}
-          <DropdownMenuItem asChild>
-            <Link
-              to="/settings"
-              className="cursor-pointer flex w-full items-center"
-            >
-              <Settings className="mr-2 h-4 w-4" />
-              <span>Settings</span>
-            </Link>
-          </DropdownMenuItem>
-        </DropdownMenuGroup>
-        <DropdownMenuSeparator />
-        <DropdownMenuItem
-          onClick={handleSignOut}
-          disabled={isSigningOut}
-          className="cursor-pointer flex w-full items-center text-red-500 focus:text-red-500"
-        >
-          <LogOut className="mr-2 h-4 w-4" />
-          <span>{isSigningOut ? "Signing out..." : "Log out"}</span>
-        </DropdownMenuItem>
-      </DropdownMenuContent>
-    </DropdownMenu>
+        </DropdownMenuContent>
+      </DropdownMenu>
+    </>
   );
 }

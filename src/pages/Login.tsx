@@ -9,12 +9,14 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { SiteHeader } from "@/components/site-header";
 import { SiteFooter } from "@/components/site-footer";
 import { toast } from "@/hooks/use-toast";
+import { UserJourneyDialog } from "@/components/user-journey-dialog";
 
 export default function Login() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [showJourney, setShowJourney] = useState(true);
   const navigate = useNavigate();
 
   const handleLogin = async (e: React.FormEvent) => {
@@ -55,6 +57,7 @@ export default function Login() {
   return (
     <div className="flex min-h-screen flex-col">
       <SiteHeader />
+      <UserJourneyDialog open={showJourney} onOpenChange={setShowJourney} />
       <main className="flex-1 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
         <div className="w-full max-w-md space-y-8 mx-auto">
           <div className="text-center">
@@ -113,6 +116,16 @@ export default function Login() {
             <Button type="submit" className="w-full" disabled={loading}>
               {loading ? "Signing in..." : "Sign in"}
             </Button>
+            
+            <div className="text-center mt-4">
+              <Button 
+                variant="link" 
+                className="text-primary" 
+                onClick={() => setShowJourney(true)}
+              >
+                View User Journey
+              </Button>
+            </div>
           </form>
         </div>
       </main>

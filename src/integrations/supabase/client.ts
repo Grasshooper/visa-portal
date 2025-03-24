@@ -1,3 +1,4 @@
+
 // src/integrations/supabase/client.ts
 import {
   createClient,
@@ -55,6 +56,11 @@ export const supabase: SupabaseClient<Database> = createClient<Database>(
     },
   }
 );
+
+// Add auth state change listener for better debugging
+supabase.auth.onAuthStateChange((event, session) => {
+  console.log(`Supabase auth event: ${event}`, session);
+});
 
 // Add connection health monitoring
 let isOnline = true;
