@@ -174,7 +174,7 @@ export default function Contact() {
                   <div className="flex items-center justify-center">
                     <div className="w-full min-h-[600px] border rounded-md">
                       <iframe
-                        src="https://calendly.com/your-calendly-link"
+                        src="https://calendly.com/gautam-vatsa2007/30min"
                         width="100%"
                         height="600"
                         frameBorder="0"
