@@ -1,5 +1,4 @@
-
-import { Link, useLocation } from 'react-router-dom';
+import { Link, useLocation } from "react-router-dom";
 import {
   Sidebar,
   SidebarContent,
@@ -13,27 +12,27 @@ import {
   SidebarMenuButton,
 } from "@/components/ui/sidebar";
 import { Button } from "@/components/ui/button";
-import { 
-  LayoutDashboard, 
-  FileText, 
-  Folder, 
-  Calendar as CalendarIcon, 
-  MessageSquare, 
-  BarChart3, 
-  Settings, 
-  Users, 
-  HelpCircle, 
-  LogOut
-} from 'lucide-react';
-import { cn } from '@/lib/utils';
+import {
+  LayoutDashboard,
+  FileText,
+  Folder,
+  Calendar as CalendarIcon,
+  MessageSquare,
+  BarChart3,
+  Settings,
+  Users,
+  HelpCircle,
+  LogOut,
+} from "lucide-react";
+import { cn } from "@/lib/utils";
 
 export function AppSidebar() {
   const location = useLocation();
-  
+
   const isActive = (path: string) => {
     return location.pathname === path;
   };
-  
+
   const mainMenuItems = [
     {
       title: "Dashboard",
@@ -67,7 +66,7 @@ export function AppSidebar() {
       href: "/reports",
     },
   ];
-  
+
   const otherMenuItems = [
     {
       title: "Settings",
@@ -89,14 +88,14 @@ export function AppSidebar() {
   return (
     <Sidebar>
       <SidebarHeader className="flex items-center gap-2 px-4 py-2 h-16">
-        <Link 
-          to="/" 
+        <Link
+          to="/"
           className="flex items-center gap-2 font-semibold text-base"
         >
           <div className="h-8 w-8 rounded-full bg-primary flex items-center justify-center text-primary-foreground font-bold">
             IM
           </div>
-          <span className="font-medium">ImmigrationManager</span>
+          <span className="font-medium">visa4U</span>
         </Link>
       </SidebarHeader>
       <SidebarContent className="px-2 py-2">
@@ -106,7 +105,7 @@ export function AppSidebar() {
             <SidebarMenu>
               {mainMenuItems.map((item) => (
                 <SidebarMenuItem key={item.title}>
-                  <SidebarMenuButton 
+                  <SidebarMenuButton
                     asChild
                     data-active={isActive(item.href)}
                     className={cn(
@@ -129,14 +128,14 @@ export function AppSidebar() {
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
-        
+
         <SidebarGroup className="mt-6">
           <SidebarGroupLabel>Other</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
               {otherMenuItems.map((item) => (
                 <SidebarMenuItem key={item.title}>
-                  <SidebarMenuButton 
+                  <SidebarMenuButton
                     asChild
                     data-active={isActive(item.href)}
                     className={cn(
@@ -155,11 +154,11 @@ export function AppSidebar() {
           </SidebarGroupContent>
         </SidebarGroup>
       </SidebarContent>
-      
+
       <SidebarFooter className="p-4 border-t border-border/40">
-        <Button 
-          variant="outline" 
-          className="w-full justify-start gap-3" 
+        <Button
+          variant="outline"
+          className="w-full justify-start gap-3"
           asChild
         >
           <Link to="/">

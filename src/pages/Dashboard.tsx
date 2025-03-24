@@ -1,12 +1,29 @@
-
+// src/pages/Dashboard.tsx
+import { useState, useEffect, Suspense } from "react";
 import { DashboardLayout } from "@/components/dashboard-layout";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
-import { BarChart3, Calendar, FileText, Folder, MoreHorizontal, Plus, RefreshCw, Users } from "lucide-react";
+import { Skeleton } from "@/components/ui/skeleton";
+import {
+  BarChart3,
+  Calendar,
+  FileText,
+  Folder,
+  MoreHorizontal,
+  Plus,
+  RefreshCw,
+  Users,
+} from "lucide-react";
 import { Link } from "react-router-dom";
 import {
   AreaChart,
@@ -24,6 +41,7 @@ import {
   Cell,
 } from "recharts";
 
+// Dummy data for charts and stats
 const data = [
   { name: "Jan", cases: 40 },
   { name: "Feb", cases: 30 },
@@ -133,7 +151,362 @@ const getEventTypeColor = (type: string) => {
   }
 };
 
+// Lazy-loaded components for dashboard sections
+const DashboardOverview = ({ isLoaded }: { isLoaded: boolean }) => {
+  if (!isLoaded) {
+    return (
+      <div className="space-y-4">
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+          <Skeleton className="h-[300px] w-full col-span-1 lg:col-span-2" />
+          <Skeleton className="h-[300px] w-full" />
+        </div>
+        <div className="grid gap-4 md:grid-cols-2">
+          <Skeleton className="h-[400px] w-full" />
+          <Skeleton className="h-[400px] w-full" />
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-4">
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+        <Card className="col-span-1 lg:col-span-2 glass-card">
+          <CardHeader>
+            <CardTitle>Case Activity</CardTitle>
+            <CardDescription>Case submissions per month</CardDescription>
+          </CardHeader>
+          <CardContent className="px-2">
+            <div className="h-[300px]">
+              <ResponsiveContainer width="100%" height="100%">
+                <AreaChart
+                  data={data}
+                  margin={{
+                    top: 10,
+                    right: 30,
+                    left: 0,
+                    bottom: 0,
+                  }}
+                >
+                  <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
+                  <XAxis dataKey="name" stroke="#94a3b8" fontSize={12} />
+                  <YAxis stroke="#94a3b8" fontSize={12} />
+                  <Tooltip />
+                  <Area
+                    type="monotone"
+                    dataKey="cases"
+                    stroke="#1a73e8"
+                    fill="#1a73e8"
+                    fillOpacity={0.2}
+                  />
+                </AreaChart>
+              </ResponsiveContainer>
+            </div>
+          </CardContent>
+        </Card>
+        <Card className="glass-card">
+          <CardHeader>
+            <CardTitle>Case Status</CardTitle>
+            <CardDescription>Distribution by current status</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="h-[300px] flex items-center justify-center">
+              <ResponsiveContainer width="100%" height="100%">
+                <PieChart>
+                  <Pie
+                    data={statusData}
+                    cx="50%"
+                    cy="50%"
+                    innerRadius={60}
+                    outerRadius={90}
+                    paddingAngle={2}
+                    dataKey="value"
+                    label={({
+                      cx,
+                      cy,
+                      midAngle,
+                      innerRadius,
+                      outerRadius,
+                      value,
+                      index,
+                    }) => {
+                      const RADIAN = Math.PI / 180;
+                      const radius =
+                        25 + innerRadius + (outerRadius - innerRadius);
+                      const x = cx + radius * Math.cos(-midAngle * RADIAN);
+                      const y = cy + radius * Math.sin(-midAngle * RADIAN);
+
+                      return (
+                        <text
+                          x={x}
+                          y={y}
+                          textAnchor={x > cx ? "start" : "end"}
+                          dominantBaseline="central"
+                          className="text-xs font-medium"
+                          fill="#64748b"
+                        >
+                          {statusData[index].name} ({value})
+                        </text>
+                      );
+                    }}
+                  >
+                    {statusData.map((entry, index) => (
+                      <Cell key={`cell-${index}`} fill={entry.color} />
+                    ))}
+                  </Pie>
+                  <Tooltip />
+                </PieChart>
+              </ResponsiveContainer>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      <div className="grid gap-4 md:grid-cols-2">
+        <Card className="glass-card">
+          <CardHeader className="pb-2">
+            <div className="flex items-center justify-between">
+              <CardTitle>Recent Cases</CardTitle>
+              <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                <MoreHorizontal className="h-4 w-4" />
+                <span className="sr-only">More</span>
+              </Button>
+            </div>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              {recentCases.map((item) => (
+                <div key={item.id} className="flex items-start gap-4">
+                  <Avatar className="h-9 w-9">
+                    <AvatarImage src="/placeholder.svg" alt={item.name} />
+                    <AvatarFallback>
+                      {item.name
+                        .split(" ")
+                        .map((n) => n[0])
+                        .join("")}
+                    </AvatarFallback>
+                  </Avatar>
+                  <div className="flex-1 space-y-1">
+                    <div className="flex items-center gap-2">
+                      <p className="text-sm font-medium leading-none">
+                        {item.name}
+                      </p>
+                      <p className="text-xs text-muted-foreground">{item.id}</p>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <p className="text-xs text-muted-foreground">
+                        {item.type}
+                      </p>
+                      <Badge
+                        variant="outline"
+                        className={`text-xs ${getStatusColor(item.status)}`}
+                      >
+                        {item.status}
+                      </Badge>
+                    </div>
+                    <div className="pt-2">
+                      <div className="flex items-center justify-between text-xs text-muted-foreground mb-1">
+                        <span>{item.progress}%</span>
+                        <span>{item.updated}</span>
+                      </div>
+                      <Progress value={item.progress} className="h-1" />
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="glass-card">
+          <CardHeader className="pb-2">
+            <div className="flex items-center justify-between">
+              <CardTitle>Upcoming Events</CardTitle>
+              <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                <MoreHorizontal className="h-4 w-4" />
+                <span className="sr-only">More</span>
+              </Button>
+            </div>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              {upcomingEvents.map((event) => (
+                <div
+                  key={event.id}
+                  className="flex items-start space-x-4 rounded-md p-3 transition-all hover:bg-muted/50"
+                >
+                  <div className="flex-1 space-y-1">
+                    <div className="flex items-center justify-between">
+                      <p className="text-sm font-medium leading-none">
+                        {event.title}
+                      </p>
+                      <Badge
+                        variant="outline"
+                        className={`text-xs ${getEventTypeColor(event.type)}`}
+                      >
+                        {event.type}
+                      </Badge>
+                    </div>
+                    <p className="text-sm text-muted-foreground">
+                      {event.date}
+                    </p>
+                  </div>
+                </div>
+              ))}
+              <Button variant="outline" className="w-full">
+                View Calendar
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    </div>
+  );
+};
+
+const AnalyticsSection = ({ isLoaded }: { isLoaded: boolean }) => {
+  if (!isLoaded) {
+    return <Skeleton className="h-[400px] w-full" />;
+  }
+
+  return (
+    <Card className="glass-card">
+      <CardHeader>
+        <CardTitle>Case Types Distribution</CardTitle>
+        <CardDescription>Analysis of current case types</CardDescription>
+      </CardHeader>
+      <CardContent className="px-2">
+        <div className="h-[400px]">
+          <ResponsiveContainer width="100%" height="100%">
+            <BarChart
+              data={caseTypes}
+              margin={{
+                top: 20,
+                right: 30,
+                left: 20,
+                bottom: 5,
+              }}
+              layout="vertical"
+            >
+              <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
+              <XAxis type="number" stroke="#94a3b8" fontSize={12} />
+              <YAxis
+                dataKey="name"
+                type="category"
+                scale="band"
+                stroke="#94a3b8"
+                fontSize={12}
+              />
+              <Tooltip />
+              <Bar
+                dataKey="count"
+                fill="#1a73e8"
+                barSize={30}
+                radius={[0, 4, 4, 0]}
+              />
+            </BarChart>
+          </ResponsiveContainer>
+        </div>
+      </CardContent>
+    </Card>
+  );
+};
+
+const ReportsSection = ({ isLoaded }: { isLoaded: boolean }) => {
+  if (!isLoaded) {
+    return <Skeleton className="h-[400px] w-full" />;
+  }
+
+  return (
+    <Card className="glass-card">
+      <CardHeader>
+        <CardTitle>Reports</CardTitle>
+        <CardDescription>
+          Generate and view immigration case reports.
+        </CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <Card>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-base">Case Status Summary</CardTitle>
+            </CardHeader>
+            <CardContent className="pb-4">
+              <p className="text-sm text-muted-foreground">
+                Summary of all cases by current status.
+              </p>
+              <Button className="w-full mt-4" variant="outline">
+                Generate Report
+              </Button>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-base">Case Processing Time</CardTitle>
+            </CardHeader>
+            <CardContent className="pb-4">
+              <p className="text-sm text-muted-foreground">
+                Analysis of case processing times by type.
+              </p>
+              <Button className="w-full mt-4" variant="outline">
+                Generate Report
+              </Button>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-base">Document Expiration</CardTitle>
+            </CardHeader>
+            <CardContent className="pb-4">
+              <p className="text-sm text-muted-foreground">
+                List of documents expiring in the next 90 days.
+              </p>
+              <Button className="w-full mt-4" variant="outline">
+                Generate Report
+              </Button>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-base">Client Demographics</CardTitle>
+            </CardHeader>
+            <CardContent className="pb-4">
+              <p className="text-sm text-muted-foreground">
+                Demographic analysis of immigration clients.
+              </p>
+              <Button className="w-full mt-4" variant="outline">
+                Generate Report
+              </Button>
+            </CardContent>
+          </Card>
+        </div>
+        <Button className="w-full">Create Custom Report</Button>
+      </CardContent>
+    </Card>
+  );
+};
+
 const Dashboard = () => {
+  const [loadingLevel, setLoadingLevel] = useState(0);
+  const [activeTab, setActiveTab] = useState("overview");
+
+  // Progressive loading of dashboard components
+  useEffect(() => {
+    // Load summary cards first
+    setLoadingLevel(1);
+
+    // Load main content with a slight delay to ensure initial render is fast
+    const timer1 = setTimeout(() => setLoadingLevel(2), 100);
+
+    // Load charts and heavy components last
+    const timer2 = setTimeout(() => setLoadingLevel(3), 300);
+
+    return () => {
+      clearTimeout(timer1);
+      clearTimeout(timer2);
+    };
+  }, []);
+
   return (
     <DashboardLayout>
       <div className="space-y-4">
@@ -158,404 +531,108 @@ const Dashboard = () => {
           </div>
         </div>
 
+        {/* First level loading - show summary cards */}
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-          <Card className="glass-card">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Total Cases</CardTitle>
-              <Folder className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">128</div>
-              <p className="text-xs text-muted-foreground">
-                +12 from last month
-              </p>
-            </CardContent>
-          </Card>
-          <Card className="glass-card">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Active Cases</CardTitle>
-              <FileText className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">54</div>
-              <p className="text-xs text-muted-foreground">
-                +3 from last month
-              </p>
-            </CardContent>
-          </Card>
-          <Card className="glass-card">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Clients</CardTitle>
-              <Users className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">87</div>
-              <p className="text-xs text-muted-foreground">
-                +5 from last month
-              </p>
-            </CardContent>
-          </Card>
-          <Card className="glass-card">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">
-                Upcoming Events
-              </CardTitle>
-              <Calendar className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">14</div>
-              <p className="text-xs text-muted-foreground">
-                Next: Today at 2:00 PM
-              </p>
-            </CardContent>
-          </Card>
+          {loadingLevel < 1 ? (
+            Array(4)
+              .fill(0)
+              .map((_, index) => (
+                <Skeleton key={index} className="h-24 w-full" />
+              ))
+          ) : (
+            <>
+              <Card className="glass-card">
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <CardTitle className="text-sm font-medium">
+                    Total Cases
+                  </CardTitle>
+                  <Folder className="h-4 w-4 text-muted-foreground" />
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold">128</div>
+                  <p className="text-xs text-muted-foreground">
+                    +12 from last month
+                  </p>
+                </CardContent>
+              </Card>
+              <Card className="glass-card">
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <CardTitle className="text-sm font-medium">
+                    Active Cases
+                  </CardTitle>
+                  <FileText className="h-4 w-4 text-muted-foreground" />
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold">54</div>
+                  <p className="text-xs text-muted-foreground">
+                    +3 from last month
+                  </p>
+                </CardContent>
+              </Card>
+              <Card className="glass-card">
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <CardTitle className="text-sm font-medium">Clients</CardTitle>
+                  <Users className="h-4 w-4 text-muted-foreground" />
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold">87</div>
+                  <p className="text-xs text-muted-foreground">
+                    +5 from last month
+                  </p>
+                </CardContent>
+              </Card>
+              <Card className="glass-card">
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <CardTitle className="text-sm font-medium">
+                    Upcoming Events
+                  </CardTitle>
+                  <Calendar className="h-4 w-4 text-muted-foreground" />
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold">14</div>
+                  <p className="text-xs text-muted-foreground">
+                    Next: Today at 2:00 PM
+                  </p>
+                </CardContent>
+              </Card>
+            </>
+          )}
         </div>
 
-        <Tabs defaultValue="overview" className="space-y-4">
-          <TabsList>
-            <TabsTrigger value="overview">Overview</TabsTrigger>
-            <TabsTrigger value="analytics">Analytics</TabsTrigger>
-            <TabsTrigger value="reports">Reports</TabsTrigger>
-          </TabsList>
-          <TabsContent value="overview" className="space-y-4">
-            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-              <Card className="col-span-1 lg:col-span-2 glass-card">
-                <CardHeader>
-                  <CardTitle>Case Activity</CardTitle>
-                  <CardDescription>
-                    Case submissions per month
-                  </CardDescription>
-                </CardHeader>
-                <CardContent className="px-2">
-                  <div className="h-[300px]">
-                    <ResponsiveContainer width="100%" height="100%">
-                      <AreaChart
-                        data={data}
-                        margin={{
-                          top: 10,
-                          right: 30,
-                          left: 0,
-                          bottom: 0,
-                        }}
-                      >
-                        <CartesianGrid
-                          strokeDasharray="3 3"
-                          stroke="#f1f5f9"
-                        />
-                        <XAxis
-                          dataKey="name"
-                          stroke="#94a3b8"
-                          fontSize={12}
-                        />
-                        <YAxis stroke="#94a3b8" fontSize={12} />
-                        <Tooltip />
-                        <Area
-                          type="monotone"
-                          dataKey="cases"
-                          stroke="#1a73e8"
-                          fill="#1a73e8"
-                          fillOpacity={0.2}
-                        />
-                      </AreaChart>
-                    </ResponsiveContainer>
-                  </div>
-                </CardContent>
-              </Card>
-              <Card className="glass-card">
-                <CardHeader>
-                  <CardTitle>Case Status</CardTitle>
-                  <CardDescription>
-                    Distribution by current status
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div className="h-[300px] flex items-center justify-center">
-                    <ResponsiveContainer width="100%" height="100%">
-                      <PieChart>
-                        <Pie
-                          data={statusData}
-                          cx="50%"
-                          cy="50%"
-                          innerRadius={60}
-                          outerRadius={90}
-                          paddingAngle={2}
-                          dataKey="value"
-                          label={({
-                            cx,
-                            cy,
-                            midAngle,
-                            innerRadius,
-                            outerRadius,
-                            value,
-                            index,
-                          }) => {
-                            const RADIAN = Math.PI / 180;
-                            const radius =
-                              25 + innerRadius + (outerRadius - innerRadius);
-                            const x =
-                              cx +
-                              radius *
-                                Math.cos(-midAngle * RADIAN);
-                            const y =
-                              cy +
-                              radius *
-                                Math.sin(-midAngle * RADIAN);
+        {/* Secondary level loading - show tabs and content structure */}
+        {loadingLevel >= 2 && (
+          <Tabs
+            value={activeTab}
+            onValueChange={setActiveTab}
+            className="space-y-4"
+          >
+            <TabsList>
+              <TabsTrigger value="overview">Overview</TabsTrigger>
+              <TabsTrigger value="analytics">Analytics</TabsTrigger>
+              <TabsTrigger value="reports">Reports</TabsTrigger>
+            </TabsList>
 
-                            return (
-                              <text
-                                x={x}
-                                y={y}
-                                textAnchor={
-                                  x > cx ? "start" : "end"
-                                }
-                                dominantBaseline="central"
-                                className="text-xs font-medium"
-                                fill="#64748b"
-                              >
-                                {statusData[index].name} ({value})
-                              </text>
-                            );
-                          }}
-                        >
-                          {statusData.map((entry, index) => (
-                            <Cell
-                              key={`cell-${index}`}
-                              fill={entry.color}
-                            />
-                          ))}
-                        </Pie>
-                        <Tooltip />
-                      </PieChart>
-                    </ResponsiveContainer>
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
+            <TabsContent value="overview">
+              <DashboardOverview isLoaded={loadingLevel >= 3} />
+            </TabsContent>
 
-            <div className="grid gap-4 md:grid-cols-2">
-              <Card className="glass-card">
-                <CardHeader className="pb-2">
-                  <div className="flex items-center justify-between">
-                    <CardTitle>Recent Cases</CardTitle>
-                    <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
-                      <MoreHorizontal className="h-4 w-4" />
-                      <span className="sr-only">More</span>
-                    </Button>
-                  </div>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-4">
-                    {recentCases.map((item) => (
-                      <div key={item.id} className="flex items-start gap-4">
-                        <Avatar className="h-9 w-9">
-                          <AvatarImage src="/placeholder.svg" alt={item.name} />
-                          <AvatarFallback>
-                            {item.name
-                              .split(" ")
-                              .map((n) => n[0])
-                              .join("")}
-                          </AvatarFallback>
-                        </Avatar>
-                        <div className="flex-1 space-y-1">
-                          <div className="flex items-center gap-2">
-                            <p className="text-sm font-medium leading-none">
-                              {item.name}
-                            </p>
-                            <p className="text-xs text-muted-foreground">
-                              {item.id}
-                            </p>
-                          </div>
-                          <div className="flex items-center justify-between">
-                            <p className="text-xs text-muted-foreground">
-                              {item.type}
-                            </p>
-                            <Badge
-                              variant="outline"
-                              className={`text-xs ${getStatusColor(
-                                item.status
-                              )}`}
-                            >
-                              {item.status}
-                            </Badge>
-                          </div>
-                          <div className="pt-2">
-                            <div className="flex items-center justify-between text-xs text-muted-foreground mb-1">
-                              <span>{item.progress}%</span>
-                              <span>{item.updated}</span>
-                            </div>
-                            <Progress value={item.progress} className="h-1" />
-                          </div>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </CardContent>
-              </Card>
+            <TabsContent value="analytics">
+              <AnalyticsSection isLoaded={loadingLevel >= 3} />
+            </TabsContent>
 
-              <Card className="glass-card">
-                <CardHeader className="pb-2">
-                  <div className="flex items-center justify-between">
-                    <CardTitle>Upcoming Events</CardTitle>
-                    <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
-                      <MoreHorizontal className="h-4 w-4" />
-                      <span className="sr-only">More</span>
-                    </Button>
-                  </div>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-4">
-                    {upcomingEvents.map((event) => (
-                      <div
-                        key={event.id}
-                        className="flex items-start space-x-4 rounded-md p-3 transition-all hover:bg-muted/50"
-                      >
-                        <div className="flex-1 space-y-1">
-                          <div className="flex items-center justify-between">
-                            <p className="text-sm font-medium leading-none">
-                              {event.title}
-                            </p>
-                            <Badge
-                              variant="outline"
-                              className={`text-xs ${getEventTypeColor(
-                                event.type
-                              )}`}
-                            >
-                              {event.type}
-                            </Badge>
-                          </div>
-                          <p className="text-sm text-muted-foreground">
-                            {event.date}
-                          </p>
-                        </div>
-                      </div>
-                    ))}
-                    <Button variant="outline" className="w-full">
-                      View Calendar
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
-          </TabsContent>
-          <TabsContent value="analytics" className="space-y-4">
-            <Card className="glass-card">
-              <CardHeader>
-                <CardTitle>Case Types Distribution</CardTitle>
-                <CardDescription>
-                  Analysis of current case types
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="px-2">
-                <div className="h-[400px]">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <BarChart
-                      data={caseTypes}
-                      margin={{
-                        top: 20,
-                        right: 30,
-                        left: 20,
-                        bottom: 5,
-                      }}
-                      layout="vertical"
-                    >
-                      <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
-                      <XAxis type="number" stroke="#94a3b8" fontSize={12} />
-                      <YAxis
-                        dataKey="name"
-                        type="category"
-                        scale="band"
-                        stroke="#94a3b8"
-                        fontSize={12}
-                      />
-                      <Tooltip />
-                      <Bar
-                        dataKey="count"
-                        fill="#1a73e8"
-                        barSize={30}
-                        radius={[0, 4, 4, 0]}
-                      />
-                    </BarChart>
-                  </ResponsiveContainer>
-                </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
-          <TabsContent value="reports" className="space-y-4">
-            <Card className="glass-card">
-              <CardHeader>
-                <CardTitle>Reports</CardTitle>
-                <CardDescription>
-                  Generate and view immigration case reports.
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <Card>
-                    <CardHeader className="pb-2">
-                      <CardTitle className="text-base">
-                        Case Status Summary
-                      </CardTitle>
-                    </CardHeader>
-                    <CardContent className="pb-4">
-                      <p className="text-sm text-muted-foreground">
-                        Summary of all cases by current status.
-                      </p>
-                      <Button className="w-full mt-4" variant="outline">
-                        Generate Report
-                      </Button>
-                    </CardContent>
-                  </Card>
-                  <Card>
-                    <CardHeader className="pb-2">
-                      <CardTitle className="text-base">
-                        Case Processing Time
-                      </CardTitle>
-                    </CardHeader>
-                    <CardContent className="pb-4">
-                      <p className="text-sm text-muted-foreground">
-                        Analysis of case processing times by type.
-                      </p>
-                      <Button className="w-full mt-4" variant="outline">
-                        Generate Report
-                      </Button>
-                    </CardContent>
-                  </Card>
-                  <Card>
-                    <CardHeader className="pb-2">
-                      <CardTitle className="text-base">
-                        Document Expiration
-                      </CardTitle>
-                    </CardHeader>
-                    <CardContent className="pb-4">
-                      <p className="text-sm text-muted-foreground">
-                        List of documents expiring in the next 90 days.
-                      </p>
-                      <Button className="w-full mt-4" variant="outline">
-                        Generate Report
-                      </Button>
-                    </CardContent>
-                  </Card>
-                  <Card>
-                    <CardHeader className="pb-2">
-                      <CardTitle className="text-base">
-                        Client Demographics
-                      </CardTitle>
-                    </CardHeader>
-                    <CardContent className="pb-4">
-                      <p className="text-sm text-muted-foreground">
-                        Demographic analysis of immigration clients.
-                      </p>
-                      <Button className="w-full mt-4" variant="outline">
-                        Generate Report
-                      </Button>
-                    </CardContent>
-                  </Card>
-                </div>
-                <Button className="w-full">Create Custom Report</Button>
-              </CardContent>
-            </Card>
-          </TabsContent>
-        </Tabs>
+            <TabsContent value="reports">
+              <ReportsSection isLoaded={loadingLevel >= 3} />
+            </TabsContent>
+          </Tabs>
+        )}
+
+        {/* Show loading skeleton if content isn't ready */}
+        {loadingLevel < 2 && (
+          <div className="space-y-4">
+            <Skeleton className="h-10 w-64" />
+            <Skeleton className="h-[600px] w-full" />
+          </div>
+        )}
       </div>
     </DashboardLayout>
   );

@@ -1,4 +1,4 @@
-
+// src/components/user-nav.tsx
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import {
@@ -10,13 +10,16 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { LogOut, Settings, User, Building, Users } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
+import { useState } from "react";
 
 export function UserNav() {
   const { user, profile, signOut } = useAuth();
-  
+  const [isSigningOut, setIsSigningOut] = useState(false);
+  const navigate = useNavigate();
+
   const getInitials = (): string => {
     if (profile?.first_name && profile?.last_name) {
       return `${profile.first_name[0]}${profile.last_name[0]}`.toUpperCase();
@@ -26,14 +29,28 @@ export function UserNav() {
     }
     return "U";
   };
-  
-  const fullName = profile?.first_name && profile?.last_name 
-    ? `${profile.first_name} ${profile.last_name}` 
+
+  const fullName =
+    profile?.first_name && profile?.last_name
+      ? `${profile.first_name} ${profile.last_name}`
+      : "User";
+
+  const userRole = profile?.role
+    ? profile.role.charAt(0).toUpperCase() + profile.role.slice(1)
     : "User";
-    
-  const userRole = profile?.role 
-    ? profile.role.charAt(0).toUpperCase() + profile.role.slice(1) 
-    : "User";
+
+  const handleSignOut = async () => {
+    try {
+      setIsSigningOut(true);
+      await signOut();
+      // Force navigation to home page after sign out
+      navigate("/");
+    } catch (error) {
+      console.error("Error signing out:", error);
+    } finally {
+      setIsSigningOut(false);
+    }
+  };
 
   return (
     <DropdownMenu>
@@ -52,22 +69,26 @@ export function UserNav() {
             <p className="text-xs leading-none text-muted-foreground">
               {user?.email}
             </p>
-            <p className="text-xs text-muted-foreground">
-              Role: {userRole}
-            </p>
+            <p className="text-xs text-muted-foreground">Role: {userRole}</p>
           </div>
         </DropdownMenuLabel>
         <DropdownMenuSeparator />
         <DropdownMenuGroup>
           <DropdownMenuItem asChild>
-            <Link to="/profile" className="cursor-pointer flex w-full items-center">
+            <Link
+              to="/profile"
+              className="cursor-pointer flex w-full items-center"
+            >
               <User className="mr-2 h-4 w-4" />
               <span>Profile</span>
             </Link>
           </DropdownMenuItem>
-          {profile?.role === 'representative' && !profile?.organization_id && (
+          {profile?.role === "representative" && !profile?.organization_id && (
             <DropdownMenuItem asChild>
-              <Link to="/create-organization" className="cursor-pointer flex w-full items-center">
+              <Link
+                to="/create-organization"
+                className="cursor-pointer flex w-full items-center"
+              >
                 <Building className="mr-2 h-4 w-4" />
                 <span>Create Organization</span>
               </Link>
@@ -75,7 +96,10 @@ export function UserNav() {
           )}
           {profile?.is_organization_admin && (
             <DropdownMenuItem asChild>
-              <Link to="/organization" className="cursor-pointer flex w-full items-center">
+              <Link
+                to="/organization"
+                className="cursor-pointer flex w-full items-center"
+              >
                 <Building className="mr-2 h-4 w-4" />
                 <span>Organization</span>
               </Link>
@@ -83,26 +107,33 @@ export function UserNav() {
           )}
           {profile?.is_organization_admin && (
             <DropdownMenuItem asChild>
-              <Link to="/organization/members" className="cursor-pointer flex w-full items-center">
+              <Link
+                to="/organization/members"
+                className="cursor-pointer flex w-full items-center"
+              >
                 <Users className="mr-2 h-4 w-4" />
                 <span>Members</span>
               </Link>
             </DropdownMenuItem>
           )}
           <DropdownMenuItem asChild>
-            <Link to="/settings" className="cursor-pointer flex w-full items-center">
+            <Link
+              to="/settings"
+              className="cursor-pointer flex w-full items-center"
+            >
               <Settings className="mr-2 h-4 w-4" />
               <span>Settings</span>
             </Link>
           </DropdownMenuItem>
         </DropdownMenuGroup>
         <DropdownMenuSeparator />
-        <DropdownMenuItem 
-          onClick={signOut}
+        <DropdownMenuItem
+          onClick={handleSignOut}
+          disabled={isSigningOut}
           className="cursor-pointer flex w-full items-center text-red-500 focus:text-red-500"
         >
           <LogOut className="mr-2 h-4 w-4" />
-          <span>Log out</span>
+          <span>{isSigningOut ? "Signing out..." : "Log out"}</span>
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
