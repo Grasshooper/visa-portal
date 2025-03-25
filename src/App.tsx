@@ -1,4 +1,3 @@
-
 // src/App.tsx
 import { Suspense, lazy, useEffect, useState } from "react";
 import { Toaster } from "@/components/ui/toaster";
@@ -31,6 +30,7 @@ const OrganizationManagement = lazy(() => import("./pages/admin/OrganizationMana
 const DocumentTypesManagement = lazy(() => import("./pages/admin/DocumentTypesManagement"));
 const FormsManagement = lazy(() => import("./pages/admin/FormsManagement"));
 const ClientSettingsManagement = lazy(() => import("./pages/admin/ClientSettingsManagement"));
+const UserAccessControl = lazy(() => import("./pages/admin/UserAccessControl"));
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -256,6 +256,14 @@ const App = () => (
                 element={
                   <AdminRoute>
                     <ClientSettingsManagement />
+                  </AdminRoute>
+                }
+              />
+              <Route
+                path="/admin/users"
+                element={
+                  <AdminRoute>
+                    <UserAccessControl />
                   </AdminRoute>
                 }
               />

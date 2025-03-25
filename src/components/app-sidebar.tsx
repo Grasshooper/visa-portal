@@ -27,6 +27,7 @@ import {
   Building,
   FileSpreadsheet,
   UserCog,
+  Shield,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/contexts/AuthContext";
@@ -93,6 +94,11 @@ export function AppSidebar() {
       title: "Client Settings",
       icon: UserCog,
       href: "/admin/client-settings",
+    },
+    {
+      title: "User Access",
+      icon: Shield,
+      href: "/admin/users",
     },
   ];
 
