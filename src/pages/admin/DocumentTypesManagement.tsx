@@ -78,6 +78,8 @@ const documentTypeSchema = z.object({
   ).optional(),
 });
 
+type DocumentTypeFormValues = z.infer<typeof documentTypeSchema>;
+
 export default function DocumentTypesManagement() {
   const { profile } = useAuth();
   const [loading, setLoading] = useState(false);
@@ -85,7 +87,7 @@ export default function DocumentTypesManagement() {
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   
-  const form = useForm<z.infer<typeof documentTypeSchema>>({
+  const form = useForm<DocumentTypeFormValues>({
     resolver: zodResolver(documentTypeSchema),
     defaultValues: {
       name: "",
@@ -144,7 +146,7 @@ export default function DocumentTypesManagement() {
     setIsFormOpen(true);
   };
 
-  const onSubmit = async (values: z.infer<typeof documentTypeSchema>) => {
+  const onSubmit = async (values: DocumentTypeFormValues) => {
     try {
       setLoading(true);
       
@@ -152,7 +154,14 @@ export default function DocumentTypesManagement() {
         // Update existing document type
         const { error } = await supabase
           .from("document_types")
-          .update(values)
+          .update({
+            name: values.name,
+            description: values.description,
+            category: values.category,
+            required_formats: values.required_formats,
+            requirements: values.requirements,
+            metadata_fields: values.metadata_fields
+          })
           .eq("id", editingId);
           
         if (error) throw error;
@@ -165,7 +174,14 @@ export default function DocumentTypesManagement() {
         // Create new document type
         const { error } = await supabase
           .from("document_types")
-          .insert(values);
+          .insert({
+            name: values.name,
+            description: values.description,
+            category: values.category,
+            required_formats: values.required_formats,
+            requirements: values.requirements,
+            metadata_fields: values.metadata_fields
+          });
           
         if (error) throw error;
         

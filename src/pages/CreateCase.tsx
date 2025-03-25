@@ -261,7 +261,7 @@ const CreateCase = () => {
                               </div>
                             ) : (
                               <>
-                                <SelectItem value="">Unassigned</SelectItem>
+                                <SelectItem value="unassigned">Unassigned</SelectItem>
                                 {getApplicants().map((applicant) => (
                                   <SelectItem key={applicant.id} value={applicant.id}>
                                     {applicant.first_name} {applicant.last_name}
@@ -299,7 +299,7 @@ const CreateCase = () => {
                               </div>
                             ) : (
                               <>
-                                <SelectItem value="">Unassigned</SelectItem>
+                                <SelectItem value="unassigned">Unassigned</SelectItem>
                                 {getRepresentatives().map((representative) => (
                                   <SelectItem key={representative.id} value={representative.id}>
                                     {representative.first_name} {representative.last_name}
