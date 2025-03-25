@@ -17,7 +17,7 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
-import { supabase } from "@/integrations/supabase/client";
+import { organizationsApi } from "@/services/api";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import * as z from "zod";
@@ -53,13 +53,7 @@ export default function OrganizationManagement() {
       
       setLoading(true);
       try {
-        const { data, error } = await supabase
-          .from("organizations")
-          .select("*")
-          .eq("id", profile.organization_id)
-          .single();
-
-        if (error) throw error;
+        const data = await organizationsApi.getById(profile.organization_id);
         
         if (data) {
           form.reset({
@@ -97,12 +91,7 @@ export default function OrganizationManagement() {
 
     setLoading(true);
     try {
-      const { error } = await supabase
-        .from("organizations")
-        .update(values)
-        .eq("id", profile.organization_id);
-
-      if (error) throw error;
+      await organizationsApi.update(profile.organization_id, values);
 
       toast({
         title: "Success",

@@ -375,6 +375,154 @@ export const documentTypesApi = {
   }
 };
 
+// Form Templates API
+export const formTemplatesApi = {
+  async getAll() {
+    return safeQuery(async () => {
+      const { data, error } = await supabase
+        .from("form_templates")
+        .select("*")
+        .order("name");
+
+      if (error) throw error;
+      return data;
+    });
+  },
+
+  async getById(id: string) {
+    return safeQuery(async () => {
+      const { data, error } = await supabase
+        .from("form_templates")
+        .select("*")
+        .eq("id", id)
+        .single();
+
+      if (error) throw error;
+      return data;
+    });
+  },
+
+  async create(formData: any) {
+    return safeQuery(async () => {
+      const { data, error } = await supabase
+        .from("form_templates")
+        .insert(formData)
+        .select()
+        .single();
+
+      if (error) throw error;
+      return data;
+    });
+  },
+
+  async update(id: string, formData: any) {
+    return safeQuery(async () => {
+      const { data, error } = await supabase
+        .from("form_templates")
+        .update(formData)
+        .eq("id", id)
+        .select()
+        .single();
+
+      if (error) throw error;
+      return data;
+    });
+  },
+
+  async delete(id: string) {
+    return safeQuery(async () => {
+      const { error } = await supabase
+        .from("form_templates")
+        .delete()
+        .eq("id", id);
+
+      if (error) throw error;
+      return true;
+    });
+  }
+};
+
+// Client Settings API
+export const clientSettingsApi = {
+  async getAll(organizationId: string) {
+    return safeQuery(async () => {
+      const { data, error } = await supabase
+        .from("client_settings")
+        .select("*")
+        .eq("organization_id", organizationId)
+        .order("setting_key");
+
+      if (error) throw error;
+      return data;
+    });
+  },
+
+  async getByKey(organizationId: string, key: string) {
+    return safeQuery(async () => {
+      const { data, error } = await supabase
+        .from("client_settings")
+        .select("*")
+        .eq("organization_id", organizationId)
+        .eq("setting_key", key)
+        .single();
+
+      if (error && error.code !== 'PGRST116') throw error; // Ignore 'not found' errors
+      return data;
+    });
+  },
+
+  async upsert(settingData: any) {
+    return safeQuery(async () => {
+      // Check if setting exists
+      const { data: existingData } = await supabase
+        .from("client_settings")
+        .select("id")
+        .eq("organization_id", settingData.organization_id)
+        .eq("setting_key", settingData.setting_key)
+        .single();
+
+      let result;
+      
+      if (existingData) {
+        // Update
+        const { data, error } = await supabase
+          .from("client_settings")
+          .update({ setting_value: settingData.setting_value })
+          .eq("id", existingData.id)
+          .select()
+          .single();
+          
+        if (error) throw error;
+        result = data;
+      } else {
+        // Insert
+        const { data, error } = await supabase
+          .from("client_settings")
+          .insert(settingData)
+          .select()
+          .single();
+          
+        if (error) throw error;
+        result = data;
+      }
+      
+      return result;
+    });
+  },
+
+  async delete(id: string) {
+    return safeQuery(async () => {
+      const { error } = await supabase
+        .from("client_settings")
+        .delete()
+        .eq("id", id);
+
+      if (error) throw error;
+      return true;
+    });
+  }
+};
+
 // Users API (for admin functions)
 export const usersApi = {
   async getProfiles() {
