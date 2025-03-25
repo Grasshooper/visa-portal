@@ -21,6 +21,8 @@ import { organizationsApi } from "@/services/api";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import * as z from "zod";
+import { Link } from "react-router-dom";
+import { UserPlus } from "lucide-react";
 
 const organizationSchema = z.object({
   name: z.string().min(2, { message: "Organization name is required" }),
@@ -111,6 +113,16 @@ export default function OrganizationManagement() {
 
   return (
     <AdminLayout title="Organization Management">
+      <div className="mb-6 flex justify-between items-center">
+        <h1 className="text-2xl font-bold">Organization Management</h1>
+        <Button variant="outline" size="sm" asChild>
+          <Link to="/admin/create-test-users">
+            <UserPlus className="h-4 w-4 mr-2" />
+            Create Test Users
+          </Link>
+        </Button>
+      </div>
+      
       <Tabs defaultValue="profile">
         <TabsList className="mb-4">
           <TabsTrigger value="profile">Organization Profile</TabsTrigger>

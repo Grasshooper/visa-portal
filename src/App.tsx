@@ -31,6 +31,7 @@ const DocumentTypesManagement = lazy(() => import("./pages/admin/DocumentTypesMa
 const FormsManagement = lazy(() => import("./pages/admin/FormsManagement"));
 const ClientSettingsManagement = lazy(() => import("./pages/admin/ClientSettingsManagement"));
 const UserAccessControl = lazy(() => import("./pages/admin/UserAccessControl"));
+const CreateTestUsers = lazy(() => import("./pages/admin/CreateTestUsers"));
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -264,6 +265,14 @@ const App = () => (
                 element={
                   <AdminRoute>
                     <UserAccessControl />
+                  </AdminRoute>
+                }
+              />
+              <Route
+                path="/admin/create-test-users"
+                element={
+                  <AdminRoute>
+                    <CreateTestUsers />
                   </AdminRoute>
                 }
               />
