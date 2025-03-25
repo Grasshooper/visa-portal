@@ -98,22 +98,11 @@ export function UserNav() {
           {profile?.is_organization_admin && (
             <DropdownMenuItem asChild>
               <Link
-                to="/organization"
+                to="/admin/organization"
                 className="cursor-pointer flex w-full items-center"
               >
                 <Building className="mr-2 h-4 w-4" />
-                <span>Organization</span>
-              </Link>
-            </DropdownMenuItem>
-          )}
-          {profile?.is_organization_admin && (
-            <DropdownMenuItem asChild>
-              <Link
-                to="/organization/members"
-                className="cursor-pointer flex w-full items-center"
-              >
-                <Users className="mr-2 h-4 w-4" />
-                <span>Members</span>
+                <span>Admin Panel</span>
               </Link>
             </DropdownMenuItem>
           )}

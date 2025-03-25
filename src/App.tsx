@@ -1,3 +1,4 @@
+
 // src/App.tsx
 import { Suspense, lazy, useEffect, useState } from "react";
 import { Toaster } from "@/components/ui/toaster";
@@ -25,6 +26,12 @@ const About = lazy(() => import("./pages/About"));
 const Contact = lazy(() => import("./pages/Contact"));
 const CreateCase = lazy(() => import("./pages/CreateCase"));
 
+// Admin pages
+const OrganizationManagement = lazy(() => import("./pages/admin/OrganizationManagement"));
+const DocumentTypesManagement = lazy(() => import("./pages/admin/DocumentTypesManagement"));
+const FormsManagement = lazy(() => import("./pages/admin/FormsManagement"));
+const ClientSettingsManagement = lazy(() => import("./pages/admin/ClientSettingsManagement"));
+
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
@@ -48,8 +55,6 @@ const LazyLoadingFallback = () => (
     </div>
   </div>
 );
-
-// Update this part in App.tsx
 
 // Protected route component with improved loading states
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
@@ -93,6 +98,54 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   }
 
   // If loading completed or timed out, but we have a user, show the protected content
+  return <Suspense fallback={<LazyLoadingFallback />}>{children}</Suspense>;
+};
+
+// Admin route component to check for admin permissions
+const AdminRoute = ({ children }: { children: React.ReactNode }) => {
+  const { user, profile, loading } = useAuth();
+
+  // Show loading state for maximum of 2 seconds to prevent infinite loading
+  const [showingLoader, setShowingLoader] = useState(true);
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setShowingLoader(false);
+    }, 2000);
+
+    if (!loading) {
+      setShowingLoader(false);
+      clearTimeout(timer);
+    }
+
+    return () => clearTimeout(timer);
+  }, [loading]);
+
+  // Redirect if not authenticated
+  if (!loading && !user) {
+    return <Navigate to="/login" />;
+  }
+
+  // Redirect if not an admin
+  if (!loading && !profile?.is_organization_admin) {
+    return <Navigate to="/dashboard" />;
+  }
+
+  // Show minimal loading state
+  if (showingLoader) {
+    return (
+      <div className="flex items-center justify-center h-screen bg-background">
+        <div className="flex flex-col items-center space-y-4">
+          <div className="w-16 h-16 rounded-full border-4 border-primary border-t-transparent animate-spin"></div>
+          <p className="text-sm text-muted-foreground">
+            Verifying administrator access...
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  // If loading completed or timed out, but we have an admin user, show the protected content
   return <Suspense fallback={<LazyLoadingFallback />}>{children}</Suspense>;
 };
 
@@ -172,6 +225,41 @@ const App = () => (
                   </ProtectedRoute>
                 }
               />
+              
+              {/* Admin routes */}
+              <Route
+                path="/admin/organization"
+                element={
+                  <AdminRoute>
+                    <OrganizationManagement />
+                  </AdminRoute>
+                }
+              />
+              <Route
+                path="/admin/document-types"
+                element={
+                  <AdminRoute>
+                    <DocumentTypesManagement />
+                  </AdminRoute>
+                }
+              />
+              <Route
+                path="/admin/forms"
+                element={
+                  <AdminRoute>
+                    <FormsManagement />
+                  </AdminRoute>
+                }
+              />
+              <Route
+                path="/admin/client-settings"
+                element={
+                  <AdminRoute>
+                    <ClientSettingsManagement />
+                  </AdminRoute>
+                }
+              />
+              
               <Route path="*" element={<NotFound />} />
             </Routes>
           </SidebarProvider>

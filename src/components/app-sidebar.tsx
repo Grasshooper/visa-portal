@@ -1,3 +1,4 @@
+
 import { Link, useLocation } from "react-router-dom";
 import {
   Sidebar,
@@ -23,11 +24,17 @@ import {
   Users,
   HelpCircle,
   LogOut,
+  Building,
+  FileSpreadsheet,
+  UserCog,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useAuth } from "@/contexts/AuthContext";
 
 export function AppSidebar() {
   const location = useLocation();
+  const { profile } = useAuth();
+  const isAdmin = profile?.is_organization_admin;
 
   const isActive = (path: string) => {
     return location.pathname === path;
@@ -58,7 +65,6 @@ export function AppSidebar() {
       title: "Messages",
       icon: MessageSquare,
       href: "/messages",
-      badge: 3,
     },
     {
       title: "Reports",
@@ -67,16 +73,34 @@ export function AppSidebar() {
     },
   ];
 
+  const adminMenuItems = [
+    {
+      title: "Organization",
+      icon: Building,
+      href: "/admin/organization",
+    },
+    {
+      title: "Document Types",
+      icon: FileSpreadsheet,
+      href: "/admin/document-types",
+    },
+    {
+      title: "Forms",
+      icon: FileText,
+      href: "/admin/forms",
+    },
+    {
+      title: "Client Settings",
+      icon: UserCog,
+      href: "/admin/client-settings",
+    },
+  ];
+
   const otherMenuItems = [
     {
       title: "Settings",
       icon: Settings,
       href: "/settings",
-    },
-    {
-      title: "Users",
-      icon: Users,
-      href: "/users",
     },
     {
       title: "Help & Support",
@@ -116,11 +140,6 @@ export function AppSidebar() {
                     <Link to={item.href}>
                       <item.icon className="h-4 w-4" />
                       <span>{item.title}</span>
-                      {item.badge && (
-                        <div className="ml-auto flex h-5 w-5 items-center justify-center rounded-full bg-primary text-[10px] font-medium text-primary-foreground">
-                          {item.badge}
-                        </div>
-                      )}
                     </Link>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
@@ -128,6 +147,33 @@ export function AppSidebar() {
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
+
+        {isAdmin && (
+          <SidebarGroup className="mt-6">
+            <SidebarGroupLabel>Admin</SidebarGroupLabel>
+            <SidebarGroupContent>
+              <SidebarMenu>
+                {adminMenuItems.map((item) => (
+                  <SidebarMenuItem key={item.title}>
+                    <SidebarMenuButton
+                      asChild
+                      data-active={isActive(item.href)}
+                      className={cn(
+                        "transition-all duration-200 justify-start gap-3 h-10",
+                        isActive(item.href) && "font-medium"
+                      )}
+                    >
+                      <Link to={item.href}>
+                        <item.icon className="h-4 w-4" />
+                        <span>{item.title}</span>
+                      </Link>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                ))}
+              </SidebarMenu>
+            </SidebarGroupContent>
+          </SidebarGroup>
+        )}
 
         <SidebarGroup className="mt-6">
           <SidebarGroupLabel>Other</SidebarGroupLabel>
