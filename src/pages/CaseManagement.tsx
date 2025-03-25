@@ -1,3 +1,5 @@
+
+import { useEffect, useState } from "react";
 import { DashboardLayout } from "@/components/dashboard-layout";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -28,111 +30,31 @@ import {
   ChevronRight,
   Download,
   Filter,
+  Loader2,
   MoreHorizontal,
   Plus,
   Search,
   SlidersHorizontal,
 } from "lucide-react";
 import { Link } from "react-router-dom";
-
-const cases = [
-  {
-    id: "CS-1024",
-    client: "Emma Wilson",
-    type: "Work Visa",
-    stage: "Interview Preparation",
-    status: "In Progress",
-    priority: "High",
-    dueDate: "Aug 15, 2023",
-    assignee: "Sarah Kim",
-  },
-  {
-    id: "CS-1023",
-    client: "Alex Johnson",
-    type: "Student Visa",
-    stage: "Document Collection",
-    status: "Document Review",
-    priority: "Medium",
-    dueDate: "Aug 22, 2023",
-    assignee: "John Davis",
-  },
-  {
-    id: "CS-1022",
-    client: "Maya Patel",
-    type: "Family Visa",
-    stage: "Interview",
-    status: "Interview Scheduled",
-    priority: "High",
-    dueDate: "Aug 10, 2023",
-    assignee: "Sarah Kim",
-  },
-  {
-    id: "CS-1021",
-    client: "Daniel Kim",
-    type: "Permanent Residency",
-    stage: "Background Check",
-    status: "Pending",
-    priority: "Medium",
-    dueDate: "Sep 5, 2023",
-    assignee: "Michael Chen",
-  },
-  {
-    id: "CS-1020",
-    client: "Olivia Martinez",
-    type: "Citizenship",
-    stage: "Application Review",
-    status: "Pending",
-    priority: "Low",
-    dueDate: "Sep 15, 2023",
-    assignee: "John Davis",
-  },
-  {
-    id: "CS-1019",
-    client: "James Wilson",
-    type: "Work Visa",
-    stage: "Decision",
-    status: "Approved",
-    priority: "High",
-    dueDate: "Aug 5, 2023",
-    assignee: "Sarah Kim",
-  },
-  {
-    id: "CS-1018",
-    client: "Sophia Lee",
-    type: "Student Visa",
-    stage: "Document Collection",
-    status: "On Hold",
-    priority: "Medium",
-    dueDate: "Aug 30, 2023",
-    assignee: "Michael Chen",
-  },
-  {
-    id: "CS-1017",
-    client: "Ethan Brown",
-    type: "Family Visa",
-    stage: "Initial Review",
-    status: "In Progress",
-    priority: "Low",
-    dueDate: "Sep 20, 2023",
-    assignee: "John Davis",
-  },
-];
+import { useCases } from "@/hooks/useCases";
+import { format } from "date-fns";
 
 const getStatusColor = (status: string) => {
-  switch (status) {
-    case "In Progress":
+  switch (status?.toLowerCase()) {
+    case "in progress":
       return "bg-blue-100 text-blue-800";
-    case "Document Review":
+    case "document review":
       return "bg-purple-100 text-purple-800";
-    case "Interview Scheduled":
+    case "interview scheduled":
       return "bg-green-100 text-green-800";
-    case "Pending":
+    case "pending":
       return "bg-yellow-100 text-yellow-800";
-    case "Approved":
+    case "approved":
       return "bg-emerald-100 text-emerald-800";
-    case "On Hold":
+    case "on hold":
       return "bg-red-100 text-red-800";
-    case "Rejected":
+    case "rejected":
       return "bg-gray-100 text-gray-800";
     default:
       return "bg-gray-100 text-gray-800";
@@ -140,12 +62,12 @@ const getStatusColor = (status: string) => {
 };
 
 const getPriorityColor = (priority: string) => {
-  switch (priority) {
-    case "High":
+  switch (priority?.toLowerCase()) {
+    case "high":
       return "bg-red-100 text-red-800";
-    case "Medium":
+    case "medium":
       return "bg-yellow-100 text-yellow-800";
-    case "Low":
+    case "low":
       return "bg-green-100 text-green-800";
     default:
       return "bg-gray-100 text-gray-800";
@@ -153,6 +75,88 @@ const getPriorityColor = (priority: string) => {
 };
 
 const CaseManagement = () => {
+  const { cases, isLoading, fetchCases, deleteCase } = useCases();
+  const [filteredCases, setFilteredCases] = useState<any[]>([]);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [statusFilter, setStatusFilter] = useState("");
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 8;
+
+  useEffect(() => {
+    fetchCases();
+  }, []);
+
+  // Apply filters
+  useEffect(() => {
+    let result = cases;
+    
+    // Apply search filter
+    if (searchQuery) {
+      const query = searchQuery.toLowerCase();
+      result = result.filter(
+        (item) =>
+          item.title?.toLowerCase().includes(query) ||
+          item.case_number?.toLowerCase().includes(query) ||
+          item.applicant_id?.first_name?.toLowerCase().includes(query) ||
+          item.applicant_id?.last_name?.toLowerCase().includes(query)
+      );
+    }
+    
+    // Apply status filter
+    if (statusFilter) {
+      result = result.filter(
+        (item) => item.status?.toLowerCase() === statusFilter.toLowerCase()
+      );
+    }
+    
+    setFilteredCases(result);
+  }, [cases, searchQuery, statusFilter]);
+
+  // Calculate pagination
+  const totalPages = Math.ceil(filteredCases.length / itemsPerPage);
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const paginatedCases = filteredCases.slice(startIndex, startIndex + itemsPerPage);
+
+  const handleStatusFilter = (status: string) => {
+    setStatusFilter(status === statusFilter ? "" : status);
+    setCurrentPage(1);
+  };
+
+  const handleDeleteCase = async (id: string) => {
+    const confirmed = window.confirm("Are you sure you want to delete this case?");
+    if (confirmed) {
+      await deleteCase(id);
+      fetchCases();
+    }
+  };
+
+  const exportCases = () => {
+    // Convert cases to CSV
+    const headers = ["Case ID", "Client", "Type", "Stage", "Status", "Priority", "Due Date"];
+    const csvContent = [
+      headers.join(","),
+      ...filteredCases.map(c => [
+        c.case_number || c.id,
+        `${c.applicant_id?.first_name || ""} ${c.applicant_id?.last_name || ""}`,
+        c.case_type || "",
+        "",
+        c.status || "",
+        c.priority || "",
+        c.target_date ? format(new Date(c.target_date), "MMM dd, yyyy") : "",
+      ].join(","))
+    ].join("\n");
+
+    // Create a download link
+    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.setAttribute("download", `cases-export-${Date.now()}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
   return (
     <DashboardLayout title="Case Management">
       <div className="space-y-4">
@@ -164,7 +168,12 @@ const CaseManagement = () => {
             </p>
           </div>
           <div className="flex items-center gap-2">
-            <Button variant="outline" size="sm" className="h-8 gap-1">
+            <Button 
+              variant="outline" 
+              size="sm" 
+              className="h-8 gap-1"
+              onClick={exportCases}
+            >
               <Download className="h-3.5 w-3.5" />
               <span className="hidden sm:inline">Export</span>
             </Button>
@@ -187,6 +196,8 @@ const CaseManagement = () => {
                     type="search"
                     placeholder="Search cases..."
                     className="w-full rounded-md pl-8"
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
                   />
                 </div>
                 <DropdownMenu>
@@ -197,12 +208,24 @@ const CaseManagement = () => {
                     </Button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end" className="w-[200px]">
-                    <DropdownMenuItem>All Cases</DropdownMenuItem>
-                    <DropdownMenuItem>High Priority</DropdownMenuItem>
-                    <DropdownMenuItem>In Progress</DropdownMenuItem>
-                    <DropdownMenuItem>Pending Review</DropdownMenuItem>
-                    <DropdownMenuItem>Approved</DropdownMenuItem>
-                    <DropdownMenuItem>Rejected</DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => handleStatusFilter("")}>
+                      All Cases
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => handleStatusFilter("in progress")}>
+                      In Progress
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => handleStatusFilter("pending")}>
+                      Pending
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => handleStatusFilter("approved")}>
+                      Approved
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => handleStatusFilter("rejected")}>
+                      Rejected
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => handleStatusFilter("on hold")}>
+                      On Hold
+                    </DropdownMenuItem>
                   </DropdownMenuContent>
                 </DropdownMenu>
                 <Button
@@ -224,102 +247,155 @@ const CaseManagement = () => {
                   <TableHead className="w-[120px]">Case ID</TableHead>
                   <TableHead>Client</TableHead>
                   <TableHead>Type</TableHead>
-                  <TableHead>Stage</TableHead>
                   <TableHead>Status</TableHead>
                   <TableHead>Priority</TableHead>
                   <TableHead>Due Date</TableHead>
-                  <TableHead>Assignee</TableHead>
+                  <TableHead>Representative</TableHead>
                   <TableHead className="w-[50px]"></TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {cases.map((item) => (
-                  <TableRow key={item.id} className="group">
-                    <TableCell className="font-medium">{item.id}</TableCell>
-                    <TableCell>{item.client}</TableCell>
-                    <TableCell>{item.type}</TableCell>
-                    <TableCell>{item.stage}</TableCell>
-                    <TableCell>
-                      <Badge
-                        variant="outline"
-                        className={getStatusColor(item.status)}
-                      >
-                        {item.status}
-                      </Badge>
-                    </TableCell>
-                    <TableCell>
-                      <Badge
-                        variant="outline"
-                        className={getPriorityColor(item.priority)}
-                      >
-                        {item.priority}
-                      </Badge>
-                    </TableCell>
-                    <TableCell>{item.dueDate}</TableCell>
-                    <TableCell>{item.assignee}</TableCell>
-                    <TableCell>
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button
-                            variant="ghost"
-                            className="h-8 w-8 p-0 opacity-70 group-hover:opacity-100"
-                          >
-                            <MoreHorizontal className="h-4 w-4" />
-                            <span className="sr-only">Open menu</span>
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
-                          <DropdownMenuItem>View details</DropdownMenuItem>
-                          <DropdownMenuItem>Edit case</DropdownMenuItem>
-                          <DropdownMenuItem>Assign user</DropdownMenuItem>
-                          <DropdownMenuItem>Change status</DropdownMenuItem>
-                          <DropdownMenuItem className="text-red-600">
-                            Delete case
-                          </DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
+                {isLoading ? (
+                  <TableRow>
+                    <TableCell colSpan={8} className="text-center py-10">
+                      <div className="flex justify-center">
+                        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                      </div>
+                      <div className="mt-2 text-sm text-muted-foreground">
+                        Loading cases...
+                      </div>
                     </TableCell>
                   </TableRow>
-                ))}
+                ) : paginatedCases.length === 0 ? (
+                  <TableRow>
+                    <TableCell colSpan={8} className="text-center py-10">
+                      <div className="text-muted-foreground">
+                        No cases found. {searchQuery || statusFilter ? "Try adjusting your filters." : ""}
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ) : (
+                  paginatedCases.map((item) => (
+                    <TableRow key={item.id} className="group">
+                      <TableCell className="font-medium">
+                        {item.case_number || item.id.substring(0, 8)}
+                      </TableCell>
+                      <TableCell>
+                        {item.applicant_id ? (
+                          `${item.applicant_id.first_name || ""} ${item.applicant_id.last_name || ""}`
+                        ) : (
+                          "Unassigned"
+                        )}
+                      </TableCell>
+                      <TableCell>{item.case_type}</TableCell>
+                      <TableCell>
+                        <Badge
+                          variant="outline"
+                          className={getStatusColor(item.status)}
+                        >
+                          {item.status || "Pending"}
+                        </Badge>
+                      </TableCell>
+                      <TableCell>
+                        <Badge
+                          variant="outline"
+                          className={getPriorityColor(item.priority)}
+                        >
+                          {item.priority || "Medium"}
+                        </Badge>
+                      </TableCell>
+                      <TableCell>
+                        {item.target_date 
+                          ? format(new Date(item.target_date), "MMM dd, yyyy") 
+                          : "Not set"}
+                      </TableCell>
+                      <TableCell>
+                        {item.representative_id ? (
+                          `${item.representative_id.first_name || ""} ${item.representative_id.last_name || ""}`
+                        ) : (
+                          "Unassigned"
+                        )}
+                      </TableCell>
+                      <TableCell>
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button
+                              variant="ghost"
+                              className="h-8 w-8 p-0 opacity-70 group-hover:opacity-100"
+                            >
+                              <MoreHorizontal className="h-4 w-4" />
+                              <span className="sr-only">Open menu</span>
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end">
+                            <DropdownMenuItem asChild>
+                              <Link to={`/cases/${item.id}`}>View details</Link>
+                            </DropdownMenuItem>
+                            <DropdownMenuItem asChild>
+                              <Link to={`/cases/${item.id}/edit`}>Edit case</Link>
+                            </DropdownMenuItem>
+                            <DropdownMenuItem>Assign user</DropdownMenuItem>
+                            <DropdownMenuItem>Change status</DropdownMenuItem>
+                            <DropdownMenuItem 
+                              className="text-red-600"
+                              onClick={() => handleDeleteCase(item.id)}
+                            >
+                              Delete case
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </TableCell>
+                    </TableRow>
+                  ))
+                )}
               </TableBody>
             </Table>
           </div>
-          <div className="flex items-center justify-between px-4 py-4">
-            <div className="text-sm text-muted-foreground">
-              Showing <strong>1-8</strong> of <strong>24</strong> cases
+          {filteredCases.length > 0 && (
+            <div className="flex items-center justify-between px-4 py-4">
+              <div className="text-sm text-muted-foreground">
+                Showing <strong>{startIndex + 1}-{Math.min(startIndex + itemsPerPage, filteredCases.length)}</strong> of <strong>{filteredCases.length}</strong> cases
+              </div>
+              <div className="flex items-center space-x-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="h-8 w-8 p-0"
+                  onClick={() => setCurrentPage(currentPage - 1)}
+                  disabled={currentPage === 1}
+                >
+                  <ChevronLeft className="h-4 w-4" />
+                  <span className="sr-only">Previous page</span>
+                </Button>
+                {Array.from({ length: Math.min(totalPages, 3) }, (_, i) => (
+                  <Button
+                    key={i + 1}
+                    variant="outline"
+                    size="sm"
+                    className={`h-8 w-8 p-0 ${
+                      currentPage === i + 1
+                        ? "bg-primary text-primary-foreground"
+                        : ""
+                    }`}
+                    onClick={() => setCurrentPage(i + 1)}
+                  >
+                    <span>{i + 1}</span>
+                    <span className="sr-only">Page {i + 1}</span>
+                  </Button>
+                ))}
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="h-8 w-8 p-0"
+                  onClick={() => setCurrentPage(currentPage + 1)}
+                  disabled={currentPage === totalPages}
+                >
+                  <ChevronRight className="h-4 w-4" />
+                  <span className="sr-only">Next page</span>
+                </Button>
+              </div>
             </div>
-            <div className="flex items-center space-x-2">
-              <Button
-                variant="outline"
-                size="sm"
-                className="h-8 w-8 p-0"
-                disabled
-              >
-                <ChevronLeft className="h-4 w-4" />
-                <span className="sr-only">Previous page</span>
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                className="h-8 w-8 p-0 bg-primary text-primary-foreground"
-              >
-                <span>1</span>
-                <span className="sr-only">Page 1</span>
-              </Button>
-              <Button variant="outline" size="sm" className="h-8 w-8 p-0">
-                <span>2</span>
-                <span className="sr-only">Page 2</span>
-              </Button>
-              <Button variant="outline" size="sm" className="h-8 w-8 p-0">
-                <span>3</span>
-                <span className="sr-only">Page 3</span>
-              </Button>
-              <Button variant="outline" size="sm" className="h-8 w-8 p-0">
-                <ChevronRight className="h-4 w-4" />
-                <span className="sr-only">Next page</span>
-              </Button>
-            </div>
-          </div>
+          )}
         </Card>
       </div>
     </DashboardLayout>

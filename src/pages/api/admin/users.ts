@@ -1,3 +1,4 @@
+
 import { createClient } from "@supabase/supabase-js";
 
 const supabaseAdmin = createClient(
@@ -18,11 +19,11 @@ export default async function handler(req, res) {
     // Verify the user is an admin
     const { data: profile } = await supabaseAdmin
       .from("profiles")
-      .select("is_organization_admin")
+      .select("is_organization_admin, role")
       .eq("id", user.id)
       .single();
 
-    if (!profile?.is_organization_admin) {
+    if (!profile?.is_organization_admin && profile?.role !== 'admin') {
       return res.status(403).json({ error: "Unauthorized" });
     }
 
@@ -32,7 +33,23 @@ export default async function handler(req, res) {
       throw error;
     }
 
-    return res.status(200).json({ users: data.users });
+    // Get profile data for each user
+    const userIds = data.users.map(user => user.id);
+    const { data: profiles } = await supabaseAdmin
+      .from("profiles")
+      .select("*, organization_id(*)")
+      .in("id", userIds);
+
+    // Merge user data with profile data
+    const enrichedUsers = data.users.map(user => {
+      const profile = profiles?.find(p => p.id === user.id) || null;
+      return {
+        ...user,
+        profile,
+      };
+    });
+
+    return res.status(200).json({ users: enrichedUsers });
   } catch (error) {
     console.error("Error:", error);
     return res.status(500).json({ error: "Internal server error" });
