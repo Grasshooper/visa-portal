@@ -9,7 +9,24 @@ import { useToast } from "@/hooks/use-toast";
 import { Loader2 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
-const testUsers = [
+// Define the valid role types to match the database enum
+type UserRole = "applicant" | "representative" | "admin";
+
+type TestUser = {
+  email: string;
+  password: string;
+  userData: {
+    first_name: string;
+    last_name: string;
+    role: UserRole;
+    is_organization_admin: boolean;
+    organization_id: string | null;
+    phone: string;
+    individual_mode?: boolean;
+  }
+};
+
+const testUsers: TestUser[] = [
   {
     email: "admin@abclegal.com",
     password: "Password123!",
@@ -94,7 +111,13 @@ export default function CreateTestUsers() {
             .upsert({
               id: data.user.id,
               email: user.email,
-              ...user.userData
+              first_name: user.userData.first_name,
+              last_name: user.userData.last_name,
+              role: user.userData.role,
+              is_organization_admin: user.userData.is_organization_admin,
+              organization_id: user.userData.organization_id,
+              phone: user.userData.phone,
+              individual_mode: user.userData.individual_mode || false
             });
 
           if (profileError) {

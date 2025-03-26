@@ -42,6 +42,7 @@ import {
   Trash,
   Mail,
   Key,
+  UserCog,
 } from "lucide-react";
 import { format } from "date-fns";
 import { Badge } from "@/components/ui/badge";
@@ -55,6 +56,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
+import { RoleAssignmentForm } from "@/components/admin/RoleAssignmentForm";
 
 type UserData = {
   id: string;
@@ -86,28 +88,25 @@ export default function UserAccessControl() {
   const [resetEmail, setResetEmail] = useState("");
   const [selectedTab, setSelectedTab] = useState("all");
   const [isProcessing, setIsProcessing] = useState(false);
+  const [isRoleManagementOpen, setIsRoleManagementOpen] = useState(false);
 
-  // Redirect if not admin
   useEffect(() => {
     if (profile && !profile.is_organization_admin) {
       navigate("/dashboard");
     }
   }, [profile, navigate]);
 
-  // Fetch users
   useEffect(() => {
     const fetchUsers = async () => {
       try {
         setIsLoading(true);
 
-        // Get all profiles first
         const { data: profiles, error: profilesError } = await supabase
           .from("profiles")
           .select("*");
 
         if (profilesError) throw profilesError;
 
-        // Call the backend endpoint to get users
         const response = await fetch("/api/admin/users");
         if (!response.ok) {
           throw new Error("Failed to fetch users");
@@ -120,7 +119,6 @@ export default function UserAccessControl() {
           return;
         }
 
-        // Join the data
         const usersWithProfiles = authUsers.map((user) => {
           const userProfile = profiles.find((p) => p.id === user.id) || {
             first_name: null,
@@ -165,11 +163,9 @@ export default function UserAccessControl() {
     fetchUsers();
   }, [toast]);
 
-  // Filter users based on search query and tab
   useEffect(() => {
     let result = users;
 
-    // Apply search filter
     if (searchQuery) {
       const query = searchQuery.toLowerCase();
       result = result.filter(
@@ -180,7 +176,6 @@ export default function UserAccessControl() {
       );
     }
 
-    // Apply tab filter
     if (selectedTab === "admin") {
       result = result.filter((user) => user.profile.is_organization_admin);
     } else if (selectedTab === "representative") {
@@ -245,14 +240,12 @@ export default function UserAccessControl() {
       setIsProcessing(true);
 
       if (user.banned_until) {
-        // Unban user
         const { error } = await supabase.auth.admin.updateUserById(user.id, {
           app_metadata: { banned_until: null },
         });
 
         if (error) throw error;
 
-        // Update local state
         setUsers((prev) =>
           prev.map((u) => (u.id === user.id ? { ...u, banned_until: null } : u))
         );
@@ -262,16 +255,14 @@ export default function UserAccessControl() {
           description: `${user.email} has been unbanned and can now access the system.`,
         });
       } else {
-        // Ban user
         const banUntil = new Date();
-        banUntil.setFullYear(banUntil.getFullYear() + 10); // Ban for 10 years
+        banUntil.setFullYear(banUntil.getFullYear() + 10);
         const { error } = await supabase.auth.admin.updateUserById(user.id, {
           app_metadata: { banned_until: banUntil.toISOString() },
         });
 
         if (error) throw error;
 
-        // Update local state
         setUsers((prev) =>
           prev.map((u) =>
             u.id === user.id
@@ -297,6 +288,11 @@ export default function UserAccessControl() {
     }
   };
 
+  const handleManageRole = (user: UserData) => {
+    setSelectedUser(user);
+    setIsRoleManagementOpen(true);
+  };
+
   const updateUserRole = async (
     user: UserData,
     newRole: "applicant" | "representative" | "admin",
@@ -305,7 +301,6 @@ export default function UserAccessControl() {
     try {
       setIsProcessing(true);
 
-      // Update the profile
       const { error } = await supabase
         .from("profiles")
         .update({
@@ -316,7 +311,6 @@ export default function UserAccessControl() {
 
       if (error) throw error;
 
-      // Update local state
       setUsers((prev) =>
         prev.map((u) =>
           u.id === user.id
@@ -338,7 +332,7 @@ export default function UserAccessControl() {
           isAdmin ? " with admin privileges" : ""
         }.`,
       });
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error updating user role:", error);
       toast({
         title: "Role update failed",
@@ -383,7 +377,6 @@ export default function UserAccessControl() {
   const refreshUserList = async () => {
     setIsLoading(true);
     try {
-      // Call the backend endpoint to get users
       const response = await fetch("/api/admin/users");
       if (!response.ok) {
         throw new Error("Failed to fetch users");
@@ -396,14 +389,12 @@ export default function UserAccessControl() {
         return;
       }
 
-      // Get all profiles
       const { data: profiles, error: profilesError } = await supabase
         .from("profiles")
         .select("*");
 
       if (profilesError) throw profilesError;
 
-      // Join the data
       const usersWithProfiles = authUsers.map((user) => {
         const userProfile = profiles.find((p) => p.id === user.id) || {
           first_name: null,
@@ -461,10 +452,13 @@ export default function UserAccessControl() {
 
   const getUserRoleBadge = (user: UserData) => {
     if (user.profile.is_organization_admin) {
-      return <Badge variant="default">Admin</Badge>;
+      return <Badge variant="default">System Admin</Badge>;
+    }
+    if (user.profile.role === "admin") {
+      return <Badge variant="secondary">Immigration Officer</Badge>;
     }
     if (user.profile.role === "representative") {
-      return <Badge variant="secondary">Representative</Badge>;
+      return <Badge variant="secondary">Legal Rep</Badge>;
     }
     return <Badge variant="outline">Applicant</Badge>;
   };
@@ -596,6 +590,12 @@ export default function UserAccessControl() {
                               <Search className="mr-2 h-4 w-4" />
                               View Details
                             </DropdownMenuItem>
+                            <DropdownMenuItem
+                              onClick={() => handleManageRole(user)}
+                            >
+                              <UserCog className="mr-2 h-4 w-4" />
+                              Manage Role
+                            </DropdownMenuItem>
                             <DropdownMenuSeparator />
                             <DropdownMenuItem
                               onClick={() => {
@@ -622,42 +622,6 @@ export default function UserAccessControl() {
                                 </>
                               )}
                             </DropdownMenuItem>
-                            <DropdownMenuSeparator />
-                            <DropdownMenuLabel>Change Role</DropdownMenuLabel>
-                            <DropdownMenuItem
-                              onClick={() =>
-                                updateUserRole(user, "admin", true)
-                              }
-                              disabled={
-                                user.profile.role === "admin" &&
-                                user.profile.is_organization_admin
-                              }
-                            >
-                              <Shield className="mr-2 h-4 w-4" />
-                              Make Admin
-                            </DropdownMenuItem>
-                            <DropdownMenuItem
-                              onClick={() =>
-                                updateUserRole(user, "representative", false)
-                              }
-                              disabled={
-                                user.profile.role === "representative" &&
-                                !user.profile.is_organization_admin
-                              }
-                            >
-                              Make Representative
-                            </DropdownMenuItem>
-                            <DropdownMenuItem
-                              onClick={() =>
-                                updateUserRole(user, "applicant", false)
-                              }
-                              disabled={
-                                user.profile.role === "applicant" &&
-                                !user.profile.is_organization_admin
-                              }
-                            >
-                              Make Applicant
-                            </DropdownMenuItem>
                           </DropdownMenuContent>
                         </DropdownMenu>
                       </TableCell>
@@ -675,7 +639,6 @@ export default function UserAccessControl() {
         </Card>
       </div>
 
-      {/* User Detail Dialog */}
       <Dialog open={isUserDetailOpen} onOpenChange={setIsUserDetailOpen}>
         <DialogContent className="max-w-md">
           <DialogHeader>
@@ -804,7 +767,6 @@ export default function UserAccessControl() {
         </DialogContent>
       </Dialog>
 
-      {/* Reset Password Dialog */}
       <Dialog open={isResetPasswordOpen} onOpenChange={setIsResetPasswordOpen}>
         <DialogContent className="max-w-md">
           <DialogHeader>
@@ -845,6 +807,34 @@ export default function UserAccessControl() {
                 </Button>
               </div>
             </div>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={isRoleManagementOpen} onOpenChange={setIsRoleManagementOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Manage User Role</DialogTitle>
+            <DialogDescription>
+              Update user role and access permissions
+            </DialogDescription>
+          </DialogHeader>
+
+          {selectedUser && (
+            <RoleAssignmentForm 
+              user={{
+                id: selectedUser.id,
+                email: selectedUser.email,
+                first_name: selectedUser.profile.first_name,
+                last_name: selectedUser.profile.last_name,
+                role: selectedUser.profile.role,
+                is_organization_admin: selectedUser.profile.is_organization_admin || false
+              }} 
+              onUpdateSuccess={() => {
+                refreshUserList();
+                setIsRoleManagementOpen(false);
+              }} 
+            />
           )}
         </DialogContent>
       </Dialog>

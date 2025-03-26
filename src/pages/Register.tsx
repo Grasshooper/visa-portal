@@ -49,13 +49,16 @@ export default function Register() {
     setLoading(true);
 
     try {
+      // All users are registered as applicants by default
       const { data, error } = await supabase.auth.signUp({
         email,
         password,
         options: {
           data: {
             first_name: firstName,
-            last_name: lastName
+            last_name: lastName,
+            role: "applicant",  // Default role for new users
+            is_organization_admin: false  // Regular users are not admins by default
           }
         }
       });
