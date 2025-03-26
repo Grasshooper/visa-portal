@@ -64,6 +64,8 @@ export function CaseFormContainer() {
 
   const onSubmit = async (values: CaseFormValues) => {
     try {
+      console.log("Submitting case form with values:", values);
+      
       // Extract relevant fields for the cases table with the new schema
       const caseData = {
         title: values.title,
@@ -110,7 +112,10 @@ export function CaseFormContainer() {
         },
       };
       
+      console.log("Preparing caseData for submission:", caseData);
+      
       const newCase = await createCase(caseData);
+      console.log("Case created successfully:", newCase);
       navigate(`/cases/${newCase.id}`);
     } catch (error) {
       console.error("Error creating case:", error);

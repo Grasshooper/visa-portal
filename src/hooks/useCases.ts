@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { casesApi } from "@/services/api";
 import { useAuth } from "@/contexts/AuthContext";
@@ -35,10 +34,8 @@ export const useCases = () => {
         caseData.organization_id = profile.organization_id;
       }
       
-      // If there's metadata, ensure it's properly formatted as a JSON string
-      if (caseData.metadata && typeof caseData.metadata === 'object') {
-        caseData.metadata = JSON.stringify(caseData.metadata);
-      }
+      // We don't need to stringify metadata as Supabase handles JSONB objects directly
+      // Remove the stringification step which was causing issues
       
       const data = await casesApi.create(caseData);
       toast({
