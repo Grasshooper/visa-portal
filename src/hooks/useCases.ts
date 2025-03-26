@@ -35,6 +35,11 @@ export const useCases = () => {
         caseData.organization_id = profile.organization_id;
       }
       
+      // If there's metadata, ensure it's properly formatted as a JSON string
+      if (caseData.metadata && typeof caseData.metadata === 'object') {
+        caseData.metadata = JSON.stringify(caseData.metadata);
+      }
+      
       const data = await casesApi.create(caseData);
       toast({
         title: "Case created",

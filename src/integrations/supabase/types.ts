@@ -13,9 +13,13 @@ export type Database = {
         Row: {
           applicant_id: string | null
           case_number: string | null
+          case_origin: string | null
           case_type: string | null
           created_at: string | null
+          description: string | null
+          filing_date: string | null
           id: string
+          metadata: Json | null
           notes: string | null
           organization_id: string | null
           priority: string | null
@@ -29,9 +33,13 @@ export type Database = {
         Insert: {
           applicant_id?: string | null
           case_number?: string | null
+          case_origin?: string | null
           case_type?: string | null
           created_at?: string | null
+          description?: string | null
+          filing_date?: string | null
           id?: string
+          metadata?: Json | null
           notes?: string | null
           organization_id?: string | null
           priority?: string | null
@@ -45,9 +53,13 @@ export type Database = {
         Update: {
           applicant_id?: string | null
           case_number?: string | null
+          case_origin?: string | null
           case_type?: string | null
           created_at?: string | null
+          description?: string | null
+          filing_date?: string | null
           id?: string
+          metadata?: Json | null
           notes?: string | null
           organization_id?: string | null
           priority?: string | null

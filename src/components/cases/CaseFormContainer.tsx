@@ -64,7 +64,7 @@ export function CaseFormContainer() {
 
   const onSubmit = async (values: CaseFormValues) => {
     try {
-      // Extract relevant fields for the case table
+      // Extract relevant fields for the cases table with the new schema
       const caseData = {
         title: values.title,
         case_number: values.case_number,
@@ -78,8 +78,9 @@ export function CaseFormContainer() {
         applicant_id: values.applicant_id || null,
         representative_id: values.representative_id || null,
         organization_id: profile?.organization_id || null,
-        // Store additional fields as metadata in the notes field if needed
-        metadata: JSON.stringify({
+        
+        // Store additional fields as metadata in the JSONB field
+        metadata: {
           contact: {
             email: values.email,
             phone: values.phone,
@@ -106,7 +107,7 @@ export function CaseFormContainer() {
             fee_status: values.fee_status,
             fee_amount: values.fee_amount,
           }
-        }),
+        },
       };
       
       const newCase = await createCase(caseData);
