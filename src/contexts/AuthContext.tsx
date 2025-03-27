@@ -1,3 +1,4 @@
+
 // src/contexts/AuthContext.tsx
 import { createContext, useContext, useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
@@ -11,7 +12,6 @@ type UserProfile = {
   email: string | null;
   phone: string | null;
   role: "applicant" | "representative" | "admin";
-  organization_id: string | null;
   is_organization_admin: boolean;
   individual_mode: boolean;
 };

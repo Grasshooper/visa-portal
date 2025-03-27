@@ -1,5 +1,5 @@
+
 import { useState } from "react";
-import { casesApi } from "@/services/api";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "@/hooks/use-toast";
 
@@ -11,9 +11,9 @@ export const useCases = () => {
   const fetchCases = async () => {
     setIsLoading(true);
     try {
-      const data = await casesApi.getAll();
-      setCases(data);
-      return data;
+      // Since we removed the cases table, return an empty array
+      setCases([]);
+      return [];
     } catch (error: any) {
       toast({
         title: "Error fetching cases",
@@ -29,20 +29,12 @@ export const useCases = () => {
   const createCase = async (caseData: any) => {
     setIsLoading(true);
     try {
-      // Ensure organization_id is set if available
-      if (profile?.organization_id && !caseData.organization_id) {
-        caseData.organization_id = profile.organization_id;
-      }
-      
-      // We don't need to stringify metadata as Supabase handles JSONB objects directly
-      // Remove the stringification step which was causing issues
-      
-      const data = await casesApi.create(caseData);
+      // Since we removed the cases table, just show a toast and return the data
       toast({
-        title: "Case created",
-        description: "The case has been created successfully.",
+        title: "Database restructuring in progress",
+        description: "The cases functionality is temporarily disabled.",
       });
-      return data;
+      return caseData;
     } catch (error: any) {
       toast({
         title: "Error creating case",
@@ -58,12 +50,12 @@ export const useCases = () => {
   const updateCase = async (id: string, caseData: any) => {
     setIsLoading(true);
     try {
-      const data = await casesApi.update(id, caseData);
+      // Since we removed the cases table, just show a toast and return the data
       toast({
-        title: "Case updated",
-        description: "The case has been updated successfully.",
+        title: "Database restructuring in progress",
+        description: "The cases functionality is temporarily disabled.",
       });
-      return data;
+      return caseData;
     } catch (error: any) {
       toast({
         title: "Error updating case",
@@ -79,10 +71,10 @@ export const useCases = () => {
   const deleteCase = async (id: string) => {
     setIsLoading(true);
     try {
-      await casesApi.delete(id);
+      // Since we removed the cases table, just show a toast and return success
       toast({
-        title: "Case deleted",
-        description: "The case has been deleted successfully.",
+        title: "Database restructuring in progress",
+        description: "The cases functionality is temporarily disabled.",
       });
       return true;
     } catch (error: any) {
