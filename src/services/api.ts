@@ -65,10 +65,17 @@ export const organizationsApi = {
   async getUserOrganization() {
     return safeQuery(async () => {
       // Get the user's profile to find their organization_id
+      const { data: userResponse } = await supabase.auth.getUser();
+      const userId = userResponse.user?.id;
+      
+      if (!userId) {
+        return null;
+      }
+
       const { data: profileData, error: profileError } = await supabase
         .from("profiles")
         .select("organization_id")
-        .eq("id", supabase.auth.getUser().then(user => user.data.user?.id))
+        .eq("id", userId)
         .single();
 
       if (profileError) {
@@ -119,15 +126,17 @@ export const organizationsApi = {
       if (orgError) throw orgError;
 
       // Update the user's profile with the new organization_id
-      const user = await supabase.auth.getUser();
-      if (user.data.user) {
+      const { data: userResponse } = await supabase.auth.getUser();
+      const userId = userResponse.user?.id;
+      
+      if (userId) {
         const { error: profileError } = await supabase
           .from("profiles")
           .update({ 
             organization_id: orgData.id,
             is_organization_admin: true  // Make the creator an admin
           })
-          .eq("id", user.data.user.id);
+          .eq("id", userId);
 
         if (profileError) throw profileError;
       }
