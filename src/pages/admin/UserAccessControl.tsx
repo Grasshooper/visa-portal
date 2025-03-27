@@ -1,16 +1,13 @@
+
 import { useState, useEffect } from "react";
 import { AdminLayout } from "@/components/admin-layout";
-import { useAuth } from "@/contexts/AuthContext";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-  DialogFooter,
-} from "@/components/ui/dialog";
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import {
   Table,
   TableBody,
@@ -27,815 +24,405 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
-import { supabase, safeQuery } from "@/integrations/supabase/client";
-import { useNavigate } from "react-router-dom";
+import { useAuth } from "@/contexts/AuthContext";
+import { supabase } from "@/integrations/supabase/client";
+import { usersApi } from "@/services/api";
 import {
   MoreHorizontal,
-  Search,
-  UserCheck,
-  UserX,
-  RefreshCw,
-  Shield,
-  Filter,
-  Download,
-  Trash,
+  UserPlus,
   Mail,
-  Key,
-  UserCog,
+  Shield,
+  User,
+  Search,
+  Check,
+  X,
 } from "lucide-react";
-import { format } from "date-fns";
-import { Badge } from "@/components/ui/badge";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import { Separator } from "@/components/ui/separator";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { RoleAssignmentForm } from "@/components/admin/RoleAssignmentForm";
 
-type UserData = {
-  id: string;
-  email: string;
-  last_sign_in_at: string | null;
-  created_at: string;
-  confirmed_at: string | null;
-  banned_until: string | null;
-  profile: {
-    first_name: string | null;
-    last_name: string | null;
-    role: "applicant" | "representative" | "admin";
-    is_organization_admin: boolean | null;
-    organization_id: string | null;
-  };
-};
-
 export default function UserAccessControl() {
-  const { profile } = useAuth();
   const { toast } = useToast();
-  const navigate = useNavigate();
-  const [users, setUsers] = useState<UserData[]>([]);
-  const [filteredUsers, setFilteredUsers] = useState<UserData[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const { profile } = useAuth();
+  const [users, setUsers] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
-  const [selectedUser, setSelectedUser] = useState<UserData | null>(null);
-  const [isUserDetailOpen, setIsUserDetailOpen] = useState(false);
-  const [isResetPasswordOpen, setIsResetPasswordOpen] = useState(false);
-  const [resetEmail, setResetEmail] = useState("");
-  const [selectedTab, setSelectedTab] = useState("all");
-  const [isProcessing, setIsProcessing] = useState(false);
-  const [isRoleManagementOpen, setIsRoleManagementOpen] = useState(false);
-
+  const [isInviteDialogOpen, setIsInviteDialogOpen] = useState(false);
+  const [selectedUser, setSelectedUser] = useState<any>(null);
+  const [isRoleDialogOpen, setIsRoleDialogOpen] = useState(false);
+  const [inviteData, setInviteData] = useState({
+    email: "",
+    firstName: "",
+    lastName: "",
+    role: "applicant",
+  });
+  
+  // Fetch users and profiles on mount
   useEffect(() => {
-    if (profile && !profile.is_organization_admin) {
-      navigate("/dashboard");
-    }
-  }, [profile, navigate]);
-
-  useEffect(() => {
-    const fetchUsers = async () => {
-      try {
-        setIsLoading(true);
-
-        const { data: profiles, error: profilesError } = await supabase
-          .from("profiles")
-          .select("*");
-
-        if (profilesError) throw profilesError;
-
-        const response = await fetch("/api/admin/users");
-        if (!response.ok) {
-          throw new Error("Failed to fetch users");
-        }
-        const { users: authUsers } = await response.json();
-
-        if (!authUsers) {
-          setUsers([]);
-          setFilteredUsers([]);
-          return;
-        }
-
-        const usersWithProfiles = authUsers.map((user) => {
-          const userProfile = profiles.find((p) => p.id === user.id) || {
-            first_name: null,
-            last_name: null,
-            role: "applicant",
-            is_organization_admin: false,
-            organization_id: null,
-          };
-
-          return {
-            id: user.id,
-            email: user.email || "",
-            last_sign_in_at: user.last_sign_in_at,
-            created_at: user.created_at,
-            confirmed_at: user.confirmed_at,
-            banned_until: user.banned_until,
-            profile: {
-              first_name: userProfile.first_name,
-              last_name: userProfile.last_name,
-              role: userProfile.role,
-              is_organization_admin: userProfile.is_organization_admin,
-              organization_id: userProfile.organization_id,
-            },
-          };
-        });
-
-        setUsers(usersWithProfiles);
-        setFilteredUsers(usersWithProfiles);
-      } catch (error) {
-        console.error("Error fetching users:", error);
-        toast({
-          title: "Error fetching users",
-          description:
-            "There was a problem fetching user data. Please try again.",
-          variant: "destructive",
-        });
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
     fetchUsers();
-  }, [toast]);
+  }, []);
 
-  useEffect(() => {
-    let result = users;
-
-    if (searchQuery) {
-      const query = searchQuery.toLowerCase();
-      result = result.filter(
-        (user) =>
-          user.email.toLowerCase().includes(query) ||
-          user.profile.first_name?.toLowerCase().includes(query) ||
-          user.profile.last_name?.toLowerCase().includes(query)
-      );
-    }
-
-    if (selectedTab === "admin") {
-      result = result.filter((user) => user.profile.is_organization_admin);
-    } else if (selectedTab === "representative") {
-      result = result.filter(
-        (user) =>
-          user.profile.role === "representative" &&
-          !user.profile.is_organization_admin
-      );
-    } else if (selectedTab === "applicant") {
-      result = result.filter((user) => user.profile.role === "applicant");
-    } else if (selectedTab === "banned") {
-      result = result.filter(
-        (user) =>
-          user.banned_until !== null && new Date(user.banned_until) > new Date()
-      );
-    }
-
-    setFilteredUsers(result);
-  }, [users, searchQuery, selectedTab]);
-
-  const handleViewDetails = (user: UserData) => {
-    setSelectedUser(user);
-    setIsUserDetailOpen(true);
-  };
-
-  const handleResetPassword = async () => {
-    if (!selectedUser) return;
-
+  const fetchUsers = async () => {
+    setLoading(true);
     try {
-      setIsProcessing(true);
-      setResetEmail(selectedUser.email);
-
-      const { error } = await supabase.auth.admin.updateUserById(
-        selectedUser.id,
-        {
-          app_metadata: { password_reset: true },
-        }
-      );
-
-      if (error) throw error;
-
-      toast({
-        title: "Password reset link sent",
-        description: `A password reset link has been sent to ${selectedUser.email}`,
-      });
-
-      setIsResetPasswordOpen(false);
-    } catch (error) {
-      console.error("Error resetting password:", error);
-      toast({
-        title: "Error resetting password",
-        description: "There was a problem sending the password reset link.",
-        variant: "destructive",
-      });
-    } finally {
-      setIsProcessing(false);
-    }
-  };
-
-  const toggleUserBan = async (user: UserData) => {
-    try {
-      setIsProcessing(true);
-
-      if (user.banned_until) {
-        const { error } = await supabase.auth.admin.updateUserById(user.id, {
-          app_metadata: { banned_until: null },
-        });
-
-        if (error) throw error;
-
-        setUsers((prev) =>
-          prev.map((u) => (u.id === user.id ? { ...u, banned_until: null } : u))
-        );
-
-        toast({
-          title: "User unbanned",
-          description: `${user.email} has been unbanned and can now access the system.`,
-        });
-      } else {
-        const banUntil = new Date();
-        banUntil.setFullYear(banUntil.getFullYear() + 10);
-        const { error } = await supabase.auth.admin.updateUserById(user.id, {
-          app_metadata: { banned_until: banUntil.toISOString() },
-        });
-
-        if (error) throw error;
-
-        setUsers((prev) =>
-          prev.map((u) =>
-            u.id === user.id
-              ? { ...u, banned_until: banUntil.toISOString() }
-              : u
-          )
-        );
-
-        toast({
-          title: "User banned",
-          description: `${user.email} has been banned and can no longer access the system.`,
-        });
+      // Get profiles from the database
+      const profiles = await usersApi.getProfiles();
+      
+      if (profiles) {
+        setUsers(profiles);
       }
     } catch (error) {
-      console.error("Error toggling user ban:", error);
+      console.error("Error fetching users:", error);
       toast({
-        title: "Action failed",
-        description: "There was a problem updating the user status.",
         variant: "destructive",
+        title: "Error",
+        description: "Failed to load users",
       });
     } finally {
-      setIsProcessing(false);
+      setLoading(false);
     }
   };
 
-  const handleManageRole = (user: UserData) => {
-    setSelectedUser(user);
-    setIsRoleManagementOpen(true);
+  const handleInvite = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    try {
+      // For demonstration only, handle invite would normally send an invitation email
+      toast({
+        title: "Database restructuring in progress",
+        description: "The invite functionality is temporarily disabled.",
+      });
+      
+      setIsInviteDialogOpen(false);
+      setInviteData({
+        email: "",
+        firstName: "",
+        lastName: "",
+        role: "applicant",
+      });
+    } catch (error) {
+      console.error("Error inviting user:", error);
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "Failed to invite user",
+      });
+    }
   };
 
-  const updateUserRole = async (
-    user: UserData,
-    newRole: "applicant" | "representative" | "admin",
-    isAdmin: boolean
-  ) => {
+  const openRoleDialog = (user: any) => {
+    setSelectedUser(user);
+    setIsRoleDialogOpen(true);
+  };
+
+  const handleRoleUpdate = async (userId: string, role: string, isAdmin: boolean) => {
     try {
-      setIsProcessing(true);
-
-      const { error } = await supabase
-        .from("profiles")
-        .update({
-          role: newRole,
-          is_organization_admin: isAdmin,
-        })
-        .eq("id", user.id);
-
-      if (error) throw error;
-
-      setUsers((prev) =>
-        prev.map((u) =>
-          u.id === user.id
-            ? {
-                ...u,
-                profile: {
-                  ...u.profile,
-                  role: newRole,
-                  is_organization_admin: isAdmin,
-                },
-              }
-            : u
+      setLoading(true);
+      
+      await usersApi.updateProfile(userId, {
+        role,
+        is_organization_admin: isAdmin,
+      });
+      
+      // Update local state
+      setUsers((prevUsers) =>
+        prevUsers.map((user) =>
+          user.id === userId
+            ? { ...user, role, is_organization_admin: isAdmin }
+            : user
         )
       );
-
+      
+      setIsRoleDialogOpen(false);
+      
       toast({
-        title: "User role updated",
-        description: `${user.email}'s role has been updated to ${newRole}${
-          isAdmin ? " with admin privileges" : ""
-        }.`,
+        title: "Success",
+        description: "User role updated successfully",
       });
-    } catch (error: any) {
+    } catch (error) {
       console.error("Error updating user role:", error);
       toast({
-        title: "Role update failed",
-        description: "There was a problem updating the user role.",
         variant: "destructive",
+        title: "Error",
+        description: "Failed to update user role",
       });
     } finally {
-      setIsProcessing(false);
+      setLoading(false);
     }
   };
 
-  const exportUserData = () => {
-    try {
-      const dataStr = JSON.stringify(filteredUsers, null, 2);
-      const dataUri =
-        "data:application/json;charset=utf-8," + encodeURIComponent(dataStr);
+  // Filter users based on search query
+  const filteredUsers = users.filter((user) => {
+    const searchLower = searchQuery.toLowerCase();
+    return (
+      user.email?.toLowerCase().includes(searchLower) ||
+      user.first_name?.toLowerCase().includes(searchLower) ||
+      user.last_name?.toLowerCase().includes(searchLower) ||
+      user.role?.toLowerCase().includes(searchLower)
+    );
+  });
 
-      const exportFileDefaultName = `user-export-${format(
-        new Date(),
-        "yyyy-MM-dd"
-      )}.json`;
-
-      const linkElement = document.createElement("a");
-      linkElement.setAttribute("href", dataUri);
-      linkElement.setAttribute("download", exportFileDefaultName);
-      linkElement.click();
-
-      toast({
-        title: "Export complete",
-        description: `Exported ${filteredUsers.length} user records.`,
-      });
-    } catch (error) {
-      console.error("Error exporting user data:", error);
-      toast({
-        title: "Export failed",
-        description: "There was a problem exporting the user data.",
-        variant: "destructive",
-      });
+  // Get initials for avatar
+  const getInitials = (firstName?: string, lastName?: string): string => {
+    if (firstName && lastName) {
+      return `${firstName[0]}${lastName[0]}`.toUpperCase();
     }
-  };
-
-  const refreshUserList = async () => {
-    setIsLoading(true);
-    try {
-      const response = await fetch("/api/admin/users");
-      if (!response.ok) {
-        throw new Error("Failed to fetch users");
-      }
-      const { users: authUsers } = await response.json();
-
-      if (!authUsers) {
-        setUsers([]);
-        setFilteredUsers([]);
-        return;
-      }
-
-      const { data: profiles, error: profilesError } = await supabase
-        .from("profiles")
-        .select("*");
-
-      if (profilesError) throw profilesError;
-
-      const usersWithProfiles = authUsers.map((user) => {
-        const userProfile = profiles.find((p) => p.id === user.id) || {
-          first_name: null,
-          last_name: null,
-          role: "applicant",
-          is_organization_admin: false,
-          organization_id: null,
-        };
-
-        return {
-          id: user.id,
-          email: user.email || "",
-          last_sign_in_at: user.last_sign_in_at,
-          created_at: user.created_at,
-          confirmed_at: user.confirmed_at,
-          banned_until: user.banned_until,
-          profile: {
-            first_name: userProfile.first_name,
-            last_name: userProfile.last_name,
-            role: userProfile.role,
-            is_organization_admin: userProfile.is_organization_admin,
-            organization_id: userProfile.organization_id,
-          },
-        };
-      });
-
-      setUsers(usersWithProfiles);
-      setFilteredUsers(usersWithProfiles);
-
-      toast({
-        title: "User list refreshed",
-        description: `Loaded ${usersWithProfiles.length} user records.`,
-      });
-    } catch (error) {
-      console.error("Error refreshing users:", error);
-      toast({
-        title: "Refresh failed",
-        description: "There was a problem refreshing the user data.",
-        variant: "destructive",
-      });
-    } finally {
-      setIsLoading(false);
+    if (firstName) {
+      return firstName[0].toUpperCase();
     }
-  };
-
-  const getUserStatusBadge = (user: UserData) => {
-    if (user.banned_until && new Date(user.banned_until) > new Date()) {
-      return <Badge variant="destructive">Banned</Badge>;
+    if (lastName) {
+      return lastName[0].toUpperCase();
     }
-    if (!user.confirmed_at) {
-      return <Badge variant="outline">Unconfirmed</Badge>;
-    }
-    return <Badge variant="success">Active</Badge>;
-  };
-
-  const getUserRoleBadge = (user: UserData) => {
-    if (user.profile.is_organization_admin) {
-      return <Badge variant="default">System Admin</Badge>;
-    }
-    if (user.profile.role === "admin") {
-      return <Badge variant="secondary">Immigration Officer</Badge>;
-    }
-    if (user.profile.role === "representative") {
-      return <Badge variant="secondary">Legal Rep</Badge>;
-    }
-    return <Badge variant="outline">Applicant</Badge>;
+    return "U";
   };
 
   return (
-    <AdminLayout title="User Access Control">
-      <div className="space-y-6">
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-          <div>
-            <h2 className="text-2xl font-bold">User Management</h2>
-            <p className="text-muted-foreground">
-              Manage user access, roles, and permissions
-            </p>
-          </div>
-
-          <div className="flex items-center gap-2 flex-wrap sm:flex-nowrap">
-            <Button
-              variant="outline"
-              onClick={refreshUserList}
-              disabled={isLoading}
-            >
-              <RefreshCw className="h-4 w-4 mr-2" />
-              Refresh
-            </Button>
-            <Button
-              variant="outline"
-              onClick={exportUserData}
-              disabled={isLoading || filteredUsers.length === 0}
-            >
-              <Download className="h-4 w-4 mr-2" />
-              Export
+    <AdminLayout title="User Access">
+      <Card className="mb-6">
+        <CardHeader>
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+            <div>
+              <CardTitle>User Management</CardTitle>
+              <CardDescription>
+                Manage users and their access levels within the organization
+              </CardDescription>
+            </div>
+            <Button onClick={() => setIsInviteDialogOpen(true)}>
+              <UserPlus className="mr-2 h-4 w-4" />
+              Invite User
             </Button>
           </div>
-        </div>
-
-        <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
-          <div className="relative w-full sm:w-auto flex-1 max-w-sm">
-            <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+        </CardHeader>
+        <CardContent>
+          <div className="relative mb-4">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
             <Input
-              type="search"
               placeholder="Search users..."
-              className="pl-8 w-full"
+              className="pl-10"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
             />
           </div>
 
-          <Tabs
-            value={selectedTab}
-            onValueChange={setSelectedTab}
-            className="w-full sm:w-auto"
-          >
-            <TabsList>
-              <TabsTrigger value="all">All</TabsTrigger>
-              <TabsTrigger value="admin">Admins</TabsTrigger>
-              <TabsTrigger value="representative">Representatives</TabsTrigger>
-              <TabsTrigger value="applicant">Applicants</TabsTrigger>
-              <TabsTrigger value="banned">Banned</TabsTrigger>
-            </TabsList>
-          </Tabs>
-        </div>
-
-        <Card>
-          <CardContent className="p-0">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>User</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead>Role</TableHead>
-                  <TableHead>Created</TableHead>
-                  <TableHead>Last Login</TableHead>
-                  <TableHead className="text-right">Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {isLoading ? (
+          {loading ? (
+            <div className="flex justify-center py-8">Loading users...</div>
+          ) : users.length === 0 ? (
+            <div className="text-center py-8 text-muted-foreground">
+              No users found in your organization.
+            </div>
+          ) : (
+            <div className="border rounded-md">
+              <Table>
+                <TableHeader>
                   <TableRow>
-                    <TableCell colSpan={6} className="h-24 text-center">
-                      <div className="flex justify-center items-center">
-                        <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
-                        Loading users...
-                      </div>
-                    </TableCell>
+                    <TableHead>User</TableHead>
+                    <TableHead>Role</TableHead>
+                    <TableHead>Admin Status</TableHead>
+                    <TableHead className="text-right">Actions</TableHead>
                   </TableRow>
-                ) : filteredUsers.length === 0 ? (
-                  <TableRow>
-                    <TableCell colSpan={6} className="h-24 text-center">
-                      No users found
-                    </TableCell>
-                  </TableRow>
-                ) : (
-                  filteredUsers.map((user) => (
+                </TableHeader>
+                <TableBody>
+                  {filteredUsers.map((user) => (
                     <TableRow key={user.id}>
                       <TableCell>
-                        <div className="font-medium">{user.email}</div>
-                        <div className="text-sm text-muted-foreground">
-                          {user.profile.first_name} {user.profile.last_name}
+                        <div className="flex items-center gap-3">
+                          <Avatar>
+                            <AvatarFallback>
+                              {getInitials(user.first_name, user.last_name)}
+                            </AvatarFallback>
+                          </Avatar>
+                          <div>
+                            <div className="font-medium">
+                              {user.first_name} {user.last_name}
+                            </div>
+                            <div className="text-sm text-muted-foreground">
+                              {user.email}
+                            </div>
+                          </div>
                         </div>
                       </TableCell>
-                      <TableCell>{getUserStatusBadge(user)}</TableCell>
-                      <TableCell>{getUserRoleBadge(user)}</TableCell>
                       <TableCell>
-                        {user.created_at
-                          ? format(new Date(user.created_at), "MMM d, yyyy")
-                          : "N/A"}
+                        <Badge variant="outline" className="capitalize">
+                          {user.role || "User"}
+                        </Badge>
                       </TableCell>
                       <TableCell>
-                        {user.last_sign_in_at
-                          ? format(
-                              new Date(user.last_sign_in_at),
-                              "MMM d, yyyy"
-                            )
-                          : "Never"}
+                        {user.is_organization_admin ? (
+                          <Badge className="bg-green-100 text-green-800 border-green-200">
+                            <Check className="h-3 w-3 mr-1" />
+                            Admin
+                          </Badge>
+                        ) : (
+                          <Badge variant="outline" className="text-muted-foreground">
+                            <X className="h-3 w-3 mr-1" />
+                            Not Admin
+                          </Badge>
+                        )}
                       </TableCell>
                       <TableCell className="text-right">
                         <DropdownMenu>
                           <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" size="sm">
+                            <Button variant="ghost" className="h-8 w-8 p-0">
                               <span className="sr-only">Open menu</span>
                               <MoreHorizontal className="h-4 w-4" />
                             </Button>
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end">
                             <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                            <DropdownMenuItem
-                              onClick={() => handleViewDetails(user)}
-                            >
-                              <Search className="mr-2 h-4 w-4" />
-                              View Details
-                            </DropdownMenuItem>
-                            <DropdownMenuItem
-                              onClick={() => handleManageRole(user)}
-                            >
-                              <UserCog className="mr-2 h-4 w-4" />
-                              Manage Role
-                            </DropdownMenuItem>
                             <DropdownMenuSeparator />
                             <DropdownMenuItem
-                              onClick={() => {
-                                setSelectedUser(user);
-                                setIsResetPasswordOpen(true);
-                              }}
+                              onClick={() => openRoleDialog(user)}
+                              className="cursor-pointer"
                             >
-                              <Key className="mr-2 h-4 w-4" />
-                              Reset Password
+                              <Shield className="h-4 w-4 mr-2" />
+                              Manage Roles
                             </DropdownMenuItem>
-                            <DropdownMenuItem
-                              onClick={() => toggleUserBan(user)}
-                            >
-                              {user.banned_until &&
-                              new Date(user.banned_until) > new Date() ? (
-                                <>
-                                  <UserCheck className="mr-2 h-4 w-4" />
-                                  Unban User
-                                </>
-                              ) : (
-                                <>
-                                  <UserX className="mr-2 h-4 w-4" />
-                                  Ban User
-                                </>
-                              )}
+                            <DropdownMenuItem className="cursor-pointer">
+                              <Mail className="h-4 w-4 mr-2" />
+                              Send Email
+                            </DropdownMenuItem>
+                            <DropdownMenuItem className="cursor-pointer">
+                              <User className="h-4 w-4 mr-2" />
+                              View Profile
                             </DropdownMenuItem>
                           </DropdownMenuContent>
                         </DropdownMenu>
                       </TableCell>
                     </TableRow>
-                  ))
-                )}
-              </TableBody>
-            </Table>
-          </CardContent>
-          <CardFooter className="border-t px-6 py-3">
-            <div className="text-xs text-muted-foreground">
-              Showing {filteredUsers.length} of {users.length} users
-            </div>
-          </CardFooter>
-        </Card>
-      </div>
-
-      <Dialog open={isUserDetailOpen} onOpenChange={setIsUserDetailOpen}>
-        <DialogContent className="max-w-md">
-          <DialogHeader>
-            <DialogTitle>User Details</DialogTitle>
-          </DialogHeader>
-
-          {selectedUser && (
-            <div className="space-y-4">
-              <div>
-                <h3 className="text-sm font-medium text-muted-foreground">
-                  Email
-                </h3>
-                <p className="text-base">{selectedUser.email}</p>
-              </div>
-
-              <div>
-                <h3 className="text-sm font-medium text-muted-foreground">
-                  Name
-                </h3>
-                <p className="text-base">
-                  {selectedUser.profile.first_name || "Not provided"}{" "}
-                  {selectedUser.profile.last_name || ""}
-                </p>
-              </div>
-
-              <div className="flex justify-between">
-                <div>
-                  <h3 className="text-sm font-medium text-muted-foreground">
-                    Status
-                  </h3>
-                  <div className="text-base mt-1">
-                    {getUserStatusBadge(selectedUser)}
-                  </div>
-                </div>
-
-                <div>
-                  <h3 className="text-sm font-medium text-muted-foreground">
-                    Role
-                  </h3>
-                  <div className="text-base mt-1">
-                    {getUserRoleBadge(selectedUser)}
-                  </div>
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <h3 className="text-sm font-medium text-muted-foreground">
-                    Created
-                  </h3>
-                  <p className="text-base">
-                    {selectedUser.created_at
-                      ? format(new Date(selectedUser.created_at), "MMM d, yyyy")
-                      : "N/A"}
-                  </p>
-                </div>
-
-                <div>
-                  <h3 className="text-sm font-medium text-muted-foreground">
-                    Last Login
-                  </h3>
-                  <p className="text-base">
-                    {selectedUser.last_sign_in_at
-                      ? format(
-                          new Date(selectedUser.last_sign_in_at),
-                          "MMM d, yyyy"
-                        )
-                      : "Never"}
-                  </p>
-                </div>
-              </div>
-
-              {selectedUser.banned_until &&
-                new Date(selectedUser.banned_until) > new Date() && (
-                  <div>
-                    <h3 className="text-sm font-medium text-muted-foreground">
-                      Banned Until
-                    </h3>
-                    <p className="text-base">
-                      {format(
-                        new Date(selectedUser.banned_until),
-                        "MMM d, yyyy"
-                      )}
-                    </p>
-                  </div>
-                )}
-
-              <Separator />
-
-              <div className="flex justify-between space-x-4">
-                <Button
-                  variant="outline"
-                  onClick={() => toggleUserBan(selectedUser)}
-                  disabled={isProcessing}
-                  className="flex-1"
-                >
-                  {selectedUser.banned_until &&
-                  new Date(selectedUser.banned_until) > new Date() ? (
-                    <>
-                      <UserCheck className="mr-2 h-4 w-4" />
-                      Unban User
-                    </>
-                  ) : (
-                    <>
-                      <UserX className="mr-2 h-4 w-4" />
-                      Ban User
-                    </>
-                  )}
-                </Button>
-
-                <Button
-                  variant="default"
-                  onClick={() => {
-                    setIsResetPasswordOpen(true);
-                    setIsUserDetailOpen(false);
-                  }}
-                  disabled={isProcessing}
-                  className="flex-1"
-                >
-                  <Key className="mr-2 h-4 w-4" />
-                  Reset Password
-                </Button>
-              </div>
+                  ))}
+                </TableBody>
+              </Table>
             </div>
           )}
-        </DialogContent>
-      </Dialog>
+        </CardContent>
+      </Card>
 
-      <Dialog open={isResetPasswordOpen} onOpenChange={setIsResetPasswordOpen}>
-        <DialogContent className="max-w-md">
-          <DialogHeader>
-            <DialogTitle>Reset User Password</DialogTitle>
-            <DialogDescription>
-              This will send a password reset link to the user's email address.
-            </DialogDescription>
-          </DialogHeader>
-
-          {selectedUser && (
-            <div className="space-y-4">
-              <p>
-                Send password reset link to:{" "}
-                <strong>{selectedUser.email}</strong>
-              </p>
-
-              <div className="flex justify-end space-x-2">
-                <Button
-                  variant="outline"
-                  onClick={() => setIsResetPasswordOpen(false)}
-                  disabled={isProcessing}
-                >
-                  Cancel
-                </Button>
-
-                <Button onClick={handleResetPassword} disabled={isProcessing}>
-                  {isProcessing ? (
-                    <>
-                      <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
-                      Sending...
-                    </>
-                  ) : (
-                    <>
-                      <Mail className="mr-2 h-4 w-4" />
-                      Send Reset Link
-                    </>
-                  )}
-                </Button>
-              </div>
-            </div>
-          )}
-        </DialogContent>
-      </Dialog>
-
-      <Dialog open={isRoleManagementOpen} onOpenChange={setIsRoleManagementOpen}>
-        <DialogContent className="max-w-md">
+      {/* Role Assignment Dialog */}
+      <Dialog open={isRoleDialogOpen} onOpenChange={setIsRoleDialogOpen}>
+        <DialogContent className="sm:max-w-md">
           <DialogHeader>
             <DialogTitle>Manage User Role</DialogTitle>
             <DialogDescription>
-              Update user role and access permissions
+              Update role and permissions for{" "}
+              <span className="font-medium">
+                {selectedUser?.first_name} {selectedUser?.last_name}
+              </span>
+            </DialogDescription>
+          </DialogHeader>
+          
+          {selectedUser && (
+            <RoleAssignmentForm
+              user={selectedUser}
+              onSubmit={handleRoleUpdate}
+              onCancel={() => setIsRoleDialogOpen(false)}
+            />
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Invite User Dialog */}
+      <Dialog open={isInviteDialogOpen} onOpenChange={setIsInviteDialogOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Invite New User</DialogTitle>
+            <DialogDescription>
+              Send an invitation to join your organization
             </DialogDescription>
           </DialogHeader>
 
-          {selectedUser && (
-            <RoleAssignmentForm 
-              user={{
-                id: selectedUser.id,
-                email: selectedUser.email,
-                first_name: selectedUser.profile.first_name,
-                last_name: selectedUser.profile.last_name,
-                role: selectedUser.profile.role,
-                is_organization_admin: selectedUser.profile.is_organization_admin || false
-              }} 
-              onUpdateSuccess={() => {
-                refreshUserList();
-                setIsRoleManagementOpen(false);
-              }} 
-            />
-          )}
+          <form onSubmit={handleInvite} className="space-y-4">
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <label htmlFor="firstName" className="text-sm font-medium">
+                  First Name
+                </label>
+                <Input
+                  id="firstName"
+                  value={inviteData.firstName}
+                  onChange={(e) =>
+                    setInviteData({ ...inviteData, firstName: e.target.value })
+                  }
+                  placeholder="John"
+                  required
+                />
+              </div>
+              <div className="space-y-2">
+                <label htmlFor="lastName" className="text-sm font-medium">
+                  Last Name
+                </label>
+                <Input
+                  id="lastName"
+                  value={inviteData.lastName}
+                  onChange={(e) =>
+                    setInviteData({ ...inviteData, lastName: e.target.value })
+                  }
+                  placeholder="Doe"
+                  required
+                />
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <label htmlFor="email" className="text-sm font-medium">
+                Email Address
+              </label>
+              <Input
+                id="email"
+                type="email"
+                value={inviteData.email}
+                onChange={(e) =>
+                  setInviteData({ ...inviteData, email: e.target.value })
+                }
+                placeholder="user@example.com"
+                required
+              />
+            </div>
+
+            <div className="space-y-2">
+              <label htmlFor="role" className="text-sm font-medium">
+                Role
+              </label>
+              <select
+                id="role"
+                value={inviteData.role}
+                onChange={(e) =>
+                  setInviteData({ ...inviteData, role: e.target.value })
+                }
+                className="w-full px-3 py-2 border rounded-md"
+                required
+              >
+                <option value="applicant">Applicant</option>
+                <option value="representative">Representative</option>
+                <option value="admin">Admin</option>
+              </select>
+              <p className="text-sm text-muted-foreground">
+                Defines what permissions the user will have
+              </p>
+            </div>
+
+            <DialogFooter className="pt-4">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setIsInviteDialogOpen(false)}
+              >
+                Cancel
+              </Button>
+              <Button type="submit">Send Invitation</Button>
+            </DialogFooter>
+          </form>
         </DialogContent>
       </Dialog>
     </AdminLayout>

@@ -84,7 +84,7 @@ export function UserNav() {
               <span>Profile</span>
             </Link>
           </DropdownMenuItem>
-          {profile?.role === "representative" && !profile?.organization_id && (
+          {profile?.role === "representative" && (
             <DropdownMenuItem asChild>
               <Link
                 to="/create-organization"

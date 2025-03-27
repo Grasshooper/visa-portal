@@ -109,12 +109,36 @@ export const clientSettingsApi = {
     return null;
   },
 
+  async getAll(organizationId: string) {
+    toast({
+      title: "Database restructuring in progress",
+      description: "The client settings functionality is temporarily disabled.",
+    });
+    return [];
+  },
+
   async update(id: string, data: any) {
     toast({
       title: "Database restructuring in progress",
       description: "The client settings functionality is temporarily disabled.",
     });
     return data;
+  },
+
+  async upsert(data: any) {
+    toast({
+      title: "Database restructuring in progress",
+      description: "The client settings functionality is temporarily disabled.",
+    });
+    return data;
+  },
+
+  async delete(id: string) {
+    toast({
+      title: "Database restructuring in progress",
+      description: "The client settings functionality is temporarily disabled.",
+    });
+    return true;
   }
 };
 

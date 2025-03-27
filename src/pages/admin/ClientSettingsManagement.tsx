@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { AdminLayout } from "@/components/admin-layout";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -32,7 +31,6 @@ const settingSchema = z.object({
 
 type Setting = {
   id: string;
-  organization_id: string;
   setting_key: string;
   setting_value: any;
   is_global: boolean;
@@ -62,11 +60,11 @@ export default function ClientSettingsManagement() {
   }, [profile]);
 
   const fetchSettings = async () => {
-    if (!profile?.organization_id) return;
-    
     setLoading(true);
     try {
-      const data = await clientSettingsApi.getAll(profile.organization_id);
+      // Use default organization ID for demonstration since organization_id was removed
+      const dummyOrgId = "default";
+      const data = await clientSettingsApi.getAll(dummyOrgId);
       setSettings(data);
     } catch (error) {
       console.error("Error fetching settings:", error);
@@ -99,15 +97,6 @@ export default function ClientSettingsManagement() {
   };
 
   const onSubmit = async (values: z.infer<typeof settingSchema>) => {
-    if (!profile?.organization_id) {
-      toast({
-        variant: "destructive",
-        title: "Error",
-        description: "You are not associated with an organization",
-      });
-      return;
-    }
-
     setLoading(true);
     try {
       let settingValue;
@@ -125,7 +114,8 @@ export default function ClientSettingsManagement() {
       }
       
       const settingData = {
-        organization_id: profile.organization_id,
+        // Use default organization ID for demonstration
+        organization_id: "default",
         setting_key: values.setting_key,
         setting_value: settingValue,
         is_global: values.is_global,

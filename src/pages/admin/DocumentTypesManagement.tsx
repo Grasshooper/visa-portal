@@ -48,7 +48,7 @@ import {
 import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
-import { supabase } from "@/integrations/supabase/client";
+import { documentTypesApi } from "@/services/api";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import * as z from "zod";
@@ -109,12 +109,7 @@ export default function DocumentTypesManagement() {
   const fetchDocumentTypes = async () => {
     setLoading(true);
     try {
-      const { data, error } = await supabase
-        .from("document_types")
-        .select("*")
-        .order("name");
-
-      if (error) throw error;
+      const data = await documentTypesApi.getAll();
       setDocumentTypes(data || []);
     } catch (error) {
       console.error("Error fetching document types:", error);
@@ -152,39 +147,14 @@ export default function DocumentTypesManagement() {
       
       if (editingId) {
         // Update existing document type
-        const { error } = await supabase
-          .from("document_types")
-          .update({
-            name: values.name,
-            description: values.description,
-            category: values.category,
-            required_formats: values.required_formats,
-            requirements: values.requirements,
-            metadata_fields: values.metadata_fields
-          })
-          .eq("id", editingId);
-          
-        if (error) throw error;
-        
+        await documentTypesApi.update(editingId, values);
         toast({
           title: "Success",
           description: "Document type updated successfully",
         });
       } else {
         // Create new document type
-        const { error } = await supabase
-          .from("document_types")
-          .insert({
-            name: values.name,
-            description: values.description,
-            category: values.category,
-            required_formats: values.required_formats,
-            requirements: values.requirements,
-            metadata_fields: values.metadata_fields
-          });
-          
-        if (error) throw error;
-        
+        await documentTypesApi.create(values);
         toast({
           title: "Success",
           description: "Document type created successfully",
@@ -222,6 +192,31 @@ export default function DocumentTypesManagement() {
       ],
     });
     setIsFormOpen(true);
+  };
+
+  const handleDeleteDocumentType = async (id: string) => {
+    if (!confirm("Are you sure you want to delete this document type?")) {
+      return;
+    }
+    
+    setLoading(true);
+    try {
+      await documentTypesApi.delete(id);
+      toast({
+        title: "Success",
+        description: "Document type deleted successfully",
+      });
+      fetchDocumentTypes();
+    } catch (error) {
+      console.error("Error deleting document type:", error);
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "Failed to delete document type",
+      });
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
