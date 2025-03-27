@@ -66,23 +66,31 @@ supabase.auth.onAuthStateChange((event, session) => {
 let isOnline = true;
 window.addEventListener("online", () => {
   isOnline = true;
+  console.log("Connection restored. You are online.");
 });
 window.addEventListener("offline", () => {
   isOnline = false;
+  console.log("Connection lost. You are offline.");
 });
 
 // Helper function to check connection before making requests
 // Generic type T for the return value of the query function
 export const safeQuery = async <T>(queryFn: () => Promise<T>): Promise<T> => {
   if (!isOnline) {
+    console.error("You appear to be offline. Please check your connection.");
     throw new Error("You appear to be offline. Please check your connection.");
   }
 
   try {
-    return await queryFn();
+    const startTime = performance.now();
+    const result = await queryFn();
+    const endTime = performance.now();
+    console.log(`Query took ${endTime - startTime}ms to complete`);
+    return result;
   } catch (error) {
     // Check if it's a network error and provide a friendly message
     const err = error as Error | PostgrestError;
+    console.error("Supabase query error:", err);
 
     if (
       !isOnline ||

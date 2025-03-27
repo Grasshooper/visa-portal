@@ -17,7 +17,8 @@ import { Button } from "@/components/ui/button";
 import { toast } from "@/hooks/use-toast";
 import { organizationsApi } from "@/services/api";
 import { useAuth } from "@/contexts/AuthContext";
-import { Check, Building2 } from "lucide-react";
+import { Check, Building2, AlertCircle } from "lucide-react";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
 const organizationSchema = z.object({
   name: z.string().min(2, { message: "Organization name is required" }),
@@ -34,6 +35,7 @@ const organizationSchema = z.object({
 export function CreateOrganizationForm({ onSuccess }: { onSuccess?: () => void }) {
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const { profile } = useAuth();
 
   const form = useForm<z.infer<typeof organizationSchema>>({
@@ -52,9 +54,13 @@ export function CreateOrganizationForm({ onSuccess }: { onSuccess?: () => void }
   });
 
   const onSubmit = async (values: z.infer<typeof organizationSchema>) => {
+    setError(null);
     try {
+      console.log("Submitting form with values:", values);
       setLoading(true);
-      await organizationsApi.create(values);
+      
+      const result = await organizationsApi.create(values);
+      console.log("Organization creation result:", result);
       
       setSuccess(true);
       toast({
@@ -68,12 +74,13 @@ export function CreateOrganizationForm({ onSuccess }: { onSuccess?: () => void }
       
       // Reset form after successful submission
       form.reset();
-    } catch (error) {
-      console.error("Error creating organization:", error);
+    } catch (err) {
+      console.error("Error in organization form submit:", err);
+      setError(err.message || "An unexpected error occurred when creating the organization");
       toast({
         variant: "destructive",
         title: "Error",
-        description: "Failed to create organization",
+        description: err.message || "Failed to create organization",
       });
     } finally {
       setLoading(false);
@@ -82,6 +89,14 @@ export function CreateOrganizationForm({ onSuccess }: { onSuccess?: () => void }
 
   return (
     <div className="space-y-6">
+      {error && (
+        <Alert variant="destructive">
+          <AlertCircle className="h-4 w-4" />
+          <AlertTitle>Error creating organization</AlertTitle>
+          <AlertDescription>{error}</AlertDescription>
+        </Alert>
+      )}
+      
       {success ? (
         <div className="flex flex-col items-center justify-center p-6 space-y-4 bg-muted/50 rounded-lg">
           <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center text-green-600">
