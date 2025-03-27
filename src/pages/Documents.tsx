@@ -1,15 +1,13 @@
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { DashboardLayout } from "@/components/dashboard-layout";
 import { DocumentUpload } from "@/components/DocumentUpload";
 import { DocumentList } from "@/components/DocumentList";
 import { DocumentCategories } from "@/components/DocumentCategories";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
-import { supabase } from "@/integrations/supabase/client";
-import { Upload, Grid, List, AlertCircle } from "lucide-react";
+import { Grid, List, Upload, AlertCircle } from "lucide-react";
 import { 
   Card, 
   CardContent, 
@@ -21,35 +19,7 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
 const Documents = () => {
   const { user, loading } = useAuth();
-  const { toast } = useToast();
-  const [documentCount, setDocumentCount] = useState(0);
   const [activeTab, setActiveTab] = useState("categories");
-  const [error, setError] = useState<string | null>(null);
-
-  // Fetch document count
-  useEffect(() => {
-    if (!user) return;
-
-    const fetchDocumentCount = async () => {
-      try {
-        const { count, error } = await supabase
-          .from("documents")
-          .select("*", { count: "exact", head: true })
-          .eq("user_id", user.id);
-        
-        if (error) throw error;
-        
-        if (count !== null) {
-          setDocumentCount(count);
-        }
-      } catch (error: any) {
-        console.error("Error fetching document count:", error.message);
-        setError("Failed to load document information");
-      }
-    };
-
-    fetchDocumentCount();
-  }, [user]);
 
   // Handle tab changes
   const handleTabChange = (value: string) => {
@@ -99,13 +69,14 @@ const Documents = () => {
           </Button>
         </div>
 
-        {error && (
-          <Alert variant="destructive">
-            <AlertCircle className="h-4 w-4" />
-            <AlertTitle>Error</AlertTitle>
-            <AlertDescription>{error}</AlertDescription>
-          </Alert>
-        )}
+        <Alert variant="destructive">
+          <AlertCircle className="h-4 w-4" />
+          <AlertTitle>Database Restructuring</AlertTitle>
+          <AlertDescription>
+            The document management functionality is currently disabled while the database is being restructured.
+            Basic authentication features are still available.
+          </AlertDescription>
+        </Alert>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <Card>
@@ -117,7 +88,7 @@ const Documents = () => {
               <div className="grid gap-2">
                 <div className="flex justify-between items-center">
                   <span className="text-muted-foreground">Total Documents</span>
-                  <span className="font-medium">{documentCount}</span>
+                  <span className="font-medium">Temporarily unavailable</span>
                 </div>
                 <div className="flex justify-between items-center">
                   <span className="text-muted-foreground">Required Documents</span>
@@ -125,7 +96,7 @@ const Documents = () => {
                 </div>
                 <div className="flex justify-between items-center">
                   <span className="text-muted-foreground">Document Status</span>
-                  <span className="font-medium">View in list</span>
+                  <span className="font-medium">Temporarily unavailable</span>
                 </div>
               </div>
             </CardContent>

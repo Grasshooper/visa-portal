@@ -1,6 +1,5 @@
 
 import { useState, useEffect } from "react";
-import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { format } from "date-fns";
 import {
@@ -28,7 +27,6 @@ import {
   FileIcon, 
   Search, 
   Trash2,
-  RotateCw,
   Calendar,
   AlertCircle
 } from "lucide-react";
@@ -44,7 +42,6 @@ import {
 } from "@/components/ui/dialog";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { useToast } from "@/hooks/use-toast";
-import { Json } from "@/integrations/supabase/types";
 
 // Rename this to avoid conflict with DOM Document
 interface DocumentItem {
@@ -81,26 +78,15 @@ export function DocumentList() {
     const fetchDocuments = async () => {
       try {
         setLoading(true);
-        const { data, error } = await supabase
-          .from("documents")
-          .select(`
-            *,
-            document_type:document_type_id (
-              id, 
-              name, 
-              category
-            )
-          `)
-          .eq("user_id", user.id)
-          .order("uploaded_at", { ascending: false });
-
-        if (error) throw error;
-
-        setDocuments(data || []);
+        // Since we don't have the documents table anymore, we'll just simulate loading
+        // and then set empty data or mock data as appropriate
+        setTimeout(() => {
+          setDocuments([]);
+          setLoading(false);
+        }, 500);
       } catch (error: any) {
         console.error("Error fetching documents:", error.message);
         setError("Failed to load documents");
-      } finally {
         setLoading(false);
       }
     };
@@ -122,16 +108,10 @@ export function DocumentList() {
     try {
       setSelectedDocument(documentItem);
       
-      // Get signedURL for viewing the document
-      const { data, error } = await supabase.storage
-        .from("case_documents")
-        .createSignedUrl(documentItem.file_path, 60); // 60 seconds expiry
-        
-      if (error) throw error;
-      
-      if (data?.signedUrl) {
-        window.open(data.signedUrl, "_blank");
-      }
+      toast({
+        title: "Database restructuring in progress",
+        description: "The document viewing functionality is temporarily disabled.",
+      });
     } catch (error: any) {
       console.error("Error viewing document:", error.message);
       toast({
@@ -144,22 +124,10 @@ export function DocumentList() {
 
   const handleDownloadDocument = async (documentItem: DocumentItem) => {
     try {
-      // Get signedURL for downloading the document
-      const { data, error } = await supabase.storage
-        .from("case_documents")
-        .createSignedUrl(documentItem.file_path, 60); // 60 seconds expiry
-        
-      if (error) throw error;
-      
-      if (data?.signedUrl) {
-        // Create an anchor element and trigger download
-        const a = document.createElement("a");
-        a.href = data.signedUrl;
-        a.download = documentItem.file_name;
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-      }
+      toast({
+        title: "Database restructuring in progress",
+        description: "The document download functionality is temporarily disabled.",
+      });
     } catch (error: any) {
       console.error("Error downloading document:", error.message);
       toast({
@@ -178,40 +146,9 @@ export function DocumentList() {
     }
     
     try {
-      // First get the document to get the file path
-      const { data: docData, error: docError } = await supabase
-        .from("documents")
-        .select("file_path")
-        .eq("id", id)
-        .single();
-        
-      if (docError) throw docError;
-      
-      if (!docData) {
-        throw new Error("Document not found");
-      }
-      
-      // Delete from storage
-      const { error: storageError } = await supabase.storage
-        .from("case_documents")
-        .remove([docData.file_path]);
-        
-      if (storageError) throw storageError;
-      
-      // Delete record from the database
-      const { error: dbError } = await supabase
-        .from("documents")
-        .delete()
-        .eq("id", id);
-        
-      if (dbError) throw dbError;
-      
-      // Update local state
-      setDocuments(documents.filter(doc => doc.id !== id));
-      
       toast({
-        title: "Document deleted",
-        description: "The document has been successfully deleted.",
+        title: "Database restructuring in progress",
+        description: "The document deletion functionality is temporarily disabled.",
       });
     } catch (error: any) {
       console.error("Error deleting document:", error.message);
@@ -293,137 +230,17 @@ export function DocumentList() {
             />
           </div>
 
-          {filteredDocuments.length === 0 ? (
-            <div className="text-center py-8">
-              {searchQuery ? (
-                <div>
-                  <p className="text-muted-foreground">No documents match your search query</p>
-                  <Button 
-                    variant="ghost" 
-                    onClick={() => setSearchQuery("")}
-                    className="mt-2"
-                  >
-                    Clear search
-                  </Button>
-                </div>
-              ) : (
-                <div>
-                  <p className="text-muted-foreground">You haven't uploaded any documents yet</p>
-                </div>
-              )}
-            </div>
-          ) : (
-            <div className="rounded-md border">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Document Name</TableHead>
-                    <TableHead className="hidden md:table-cell">Type</TableHead>
-                    <TableHead className="hidden md:table-cell">Category</TableHead>
-                    <TableHead className="hidden md:table-cell">Status</TableHead>
-                    <TableHead className="hidden md:table-cell">Uploaded</TableHead>
-                    <TableHead className="text-right">Actions</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {filteredDocuments.map((doc) => (
-                    <TableRow key={doc.id} className="group">
-                      <TableCell>
-                        <div className="flex items-center gap-2">
-                          <FileIcon className="h-4 w-4 text-primary" />
-                          <span className="font-medium truncate" title={doc.file_name}>
-                            {doc.file_name}
-                          </span>
-                          <span className="text-xs text-muted-foreground">
-                            ({formatFileSize(doc.file_size)})
-                          </span>
-                        </div>
-                      </TableCell>
-                      <TableCell className="hidden md:table-cell">
-                        {doc.document_type.name}
-                      </TableCell>
-                      <TableCell className="hidden md:table-cell">
-                        {doc.document_type.category}
-                      </TableCell>
-                      <TableCell className="hidden md:table-cell">
-                        <Badge
-                          variant="outline"
-                          className={getStatusColor(doc.status)}
-                        >
-                          {doc.status}
-                        </Badge>
-                      </TableCell>
-                      <TableCell className="hidden md:table-cell">
-                        <div className="flex items-center gap-1" title={format(new Date(doc.uploaded_at), 'PPpp')}>
-                          <Calendar className="h-3.5 w-3.5 text-muted-foreground" />
-                          <span className="text-sm">
-                            {format(new Date(doc.uploaded_at), 'MMM d, yyyy')}
-                          </span>
-                        </div>
-                      </TableCell>
-                      <TableCell className="text-right">
-                        <div className="flex justify-end gap-2">
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            onClick={() => handleViewDocument(doc)}
-                            title="View document"
-                          >
-                            <Eye className="h-4 w-4" />
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            onClick={() => handleDownloadDocument(doc)}
-                            title="Download document"
-                          >
-                            <Download className="h-4 w-4" />
-                          </Button>
-                          <Dialog open={deletingId === doc.id && confirmDelete} onOpenChange={() => {
-                            if (deletingId === doc.id) {
-                              setConfirmDelete(false);
-                              setDeletingId(null);
-                            }
-                          }}>
-                            <DialogTrigger asChild>
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                className="text-destructive hover:text-destructive"
-                                onClick={() => handleDeleteDocument(doc.id)}
-                                title="Delete document"
-                              >
-                                <Trash2 className="h-4 w-4" />
-                              </Button>
-                            </DialogTrigger>
-                            <DialogContent>
-                              <DialogHeader>
-                                <DialogTitle>Confirm Deletion</DialogTitle>
-                                <DialogDescription>
-                                  Are you sure you want to delete this document? This action cannot be undone.
-                                </DialogDescription>
-                              </DialogHeader>
-                              <DialogFooter className="flex space-x-2 justify-end">
-                                <DialogClose asChild>
-                                  <Button variant="outline">Cancel</Button>
-                                </DialogClose>
-                                <Button 
-                                  variant="destructive" 
-                                  onClick={() => handleDeleteDocument(doc.id)}
-                                >
-                                  Delete
-                                </Button>
-                              </DialogFooter>
-                            </DialogContent>
-                          </Dialog>
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </div>
-          )}
+          <Alert variant="destructive">
+            <AlertCircle className="h-4 w-4" />
+            <AlertTitle>Database Restructuring</AlertTitle>
+            <AlertDescription>
+              The document management functionality is currently disabled while the database is being restructured.
+            </AlertDescription>
+          </Alert>
+
+          <div className="text-center py-8">
+            <p className="text-muted-foreground">Document management will be available again soon</p>
+          </div>
         </div>
       </CardContent>
     </Card>

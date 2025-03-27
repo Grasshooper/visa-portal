@@ -79,7 +79,6 @@ export function CaseFormContainer() {
         case_origin: values.case_origin,
         applicant_id: values.applicant_id || null,
         representative_id: values.representative_id || null,
-        organization_id: profile?.organization_id || null,
         
         // Store additional fields as metadata in the JSONB field
         metadata: {
