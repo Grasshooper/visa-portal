@@ -15,6 +15,7 @@ import { toast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
 import { organizationsApi } from "@/services/api";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { CreateOrganizationForm } from "@/components/admin/CreateOrganizationForm";
 import {
   Form,
   FormControl,
@@ -28,6 +29,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import * as z from "zod";
 import { Textarea } from "@/components/ui/textarea";
+import { Building2, Plus, RefreshCw } from "lucide-react";
 
 const organizationSchema = z.object({
   name: z.string().min(2, { message: "Organization name is required" }),
@@ -45,6 +47,7 @@ export default function OrganizationManagement() {
   const { profile } = useAuth();
   const [organization, setOrganization] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [showCreateForm, setShowCreateForm] = useState(false);
 
   const form = useForm<z.infer<typeof organizationSchema>>({
     resolver: zodResolver(organizationSchema),
@@ -63,48 +66,53 @@ export default function OrganizationManagement() {
 
   // Fetch organization on mount
   useEffect(() => {
-    const fetchOrganization = async () => {
-      setLoading(true);
-      try {
-        // Use a default organization ID since organization_id was removed from profile
-        const defaultOrgId = "default";
-        const data = await organizationsApi.getById(defaultOrgId);
-        if (data) {
-          setOrganization(data);
-          form.reset({
-            name: data.name || "",
-            website: data.website || "",
-            phone: data.phone || "",
-            email: data.email || "",
-            address: data.address || "",
-            city: data.city || "",
-            state: data.state || "",
-            zip: data.zip || "",
-            country: data.country || "United States",
-          });
-        }
-      } catch (error) {
-        console.error("Error fetching organization:", error);
-        toast({
-          variant: "destructive",
-          title: "Error",
-          description: "Failed to load organization details",
-        });
-      } finally {
-        setLoading(false);
-      }
-    };
-
     fetchOrganization();
-  }, [form]);
+  }, []);
+
+  const fetchOrganization = async () => {
+    setLoading(true);
+    try {
+      const data = await organizationsApi.getUserOrganization();
+      if (data) {
+        setOrganization(data);
+        form.reset({
+          name: data.name || "",
+          website: data.website || "",
+          phone: data.phone || "",
+          email: data.email || "",
+          address: data.address || "",
+          city: data.city || "",
+          state: data.state || "",
+          zip: data.zip || "",
+          country: data.country || "United States",
+        });
+      }
+    } catch (error) {
+      console.error("Error fetching organization:", error);
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "Failed to load organization details",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const onSubmit = async (values: z.infer<typeof organizationSchema>) => {
     try {
       setLoading(true);
       
-      // Use a default organization ID since organization_id was removed from profile
-      const defaultOrgId = "default";
-      await organizationsApi.update(defaultOrgId, values);
+      if (!organization) {
+        toast({
+          variant: "destructive",
+          title: "Error",
+          description: "No organization found to update",
+        });
+        return;
+      }
+      
+      await organizationsApi.update(organization.id, values);
       
       toast({
         title: "Success",
@@ -127,6 +135,11 @@ export default function OrganizationManagement() {
     }
   };
 
+  const handleCreateSuccess = () => {
+    setShowCreateForm(false);
+    fetchOrganization();
+  };
+
   return (
     <AdminLayout title="Organization">
       <Tabs defaultValue="general">
@@ -137,18 +150,59 @@ export default function OrganizationManagement() {
         </TabsList>
         
         <TabsContent value="general" className="space-y-6">
-          <div>
-            <h2 className="text-2xl font-bold">Organization Details</h2>
-            <p className="text-muted-foreground">
-              Manage your organization's information and settings
-            </p>
+          <div className="flex justify-between items-start">
+            <div>
+              <h2 className="text-2xl font-bold">Organization Details</h2>
+              <p className="text-muted-foreground">
+                Manage your organization's information and settings
+              </p>
+            </div>
+            
+            {!organization && !showCreateForm ? (
+              <Button onClick={() => setShowCreateForm(true)}>
+                <Plus className="h-4 w-4 mr-2" />
+                Create Organization
+              </Button>
+            ) : organization ? (
+              <Button variant="outline" onClick={fetchOrganization} disabled={loading}>
+                <RefreshCw className={`h-4 w-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
+                Refresh
+              </Button>
+            ) : null}
           </div>
           
-          {loading ? (
+          {loading && !showCreateForm ? (
             <Card>
               <CardContent className="p-6">
                 <div className="flex justify-center items-center h-64">
                   <p>Loading organization details...</p>
+                </div>
+              </CardContent>
+            </Card>
+          ) : showCreateForm ? (
+            <Card>
+              <CardContent className="p-6">
+                <CreateOrganizationForm onSuccess={handleCreateSuccess} />
+                <div className="flex justify-end mt-4">
+                  <Button variant="ghost" onClick={() => setShowCreateForm(false)}>
+                    Cancel
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          ) : !organization ? (
+            <Card>
+              <CardContent className="p-6">
+                <div className="flex flex-col justify-center items-center h-64 space-y-4">
+                  <Building2 className="h-12 w-12 text-muted-foreground/50" />
+                  <h3 className="text-xl font-medium">No Organization Found</h3>
+                  <p className="text-muted-foreground text-center max-w-md">
+                    You don't have any organization set up yet. Create a new organization to get started.
+                  </p>
+                  <Button onClick={() => setShowCreateForm(true)}>
+                    <Plus className="h-4 w-4 mr-2" />
+                    Create Organization
+                  </Button>
                 </div>
               </CardContent>
             </Card>

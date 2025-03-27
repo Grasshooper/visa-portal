@@ -40,147 +40,159 @@ export const casesApi = {
 // Document Types API - Stubbed out since we removed the table
 export const documentTypesApi = {
   async getAll() {
-    toast({
-      title: "Database restructuring in progress",
-      description: "The document types functionality is temporarily disabled.",
-    });
     return [];
   },
 
   async getById(id: string) {
-    toast({
-      title: "Database restructuring in progress",
-      description: "The document types functionality is temporarily disabled.",
-    });
     return null;
   },
 
   async create(data: any) {
-    toast({
-      title: "Database restructuring in progress",
-      description: "The document types functionality is temporarily disabled.",
-    });
     return data;
   },
 
   async update(id: string, data: any) {
-    toast({
-      title: "Database restructuring in progress",
-      description: "The document types functionality is temporarily disabled.",
-    });
     return data;
   },
 
   async delete(id: string) {
-    toast({
-      title: "Database restructuring in progress",
-      description: "The document types functionality is temporarily disabled.",
-    });
     return true;
   }
 };
 
-// Organizations API - Stubbed out since we removed the table
+// Organizations API
 export const organizationsApi = {
-  async getById(id: string) {
-    toast({
-      title: "Database restructuring in progress",
-      description: "The organizations functionality is temporarily disabled.",
+  async getUserOrganization() {
+    return safeQuery(async () => {
+      // Get the user's profile to find their organization_id
+      const { data: profileData, error: profileError } = await supabase
+        .from("profiles")
+        .select("organization_id")
+        .eq("id", supabase.auth.getUser().then(user => user.data.user?.id))
+        .single();
+
+      if (profileError) {
+        if (profileError.code !== 'PGRST116') { // Not found error
+          throw profileError;
+        }
+        return null;
+      }
+
+      if (!profileData?.organization_id) {
+        return null;
+      }
+
+      // Get the organization details
+      const { data, error } = await supabase
+        .from("organizations")
+        .select("*")
+        .eq("id", profileData.organization_id)
+        .single();
+
+      if (error) throw error;
+      return data;
     });
-    return null;
+  },
+
+  async getById(id: string) {
+    return safeQuery(async () => {
+      const { data, error } = await supabase
+        .from("organizations")
+        .select("*")
+        .eq("id", id)
+        .single();
+
+      if (error) throw error;
+      return data;
+    });
+  },
+
+  async create(data: any) {
+    return safeQuery(async () => {
+      // Create the organization
+      const { data: orgData, error: orgError } = await supabase
+        .from("organizations")
+        .insert(data)
+        .select()
+        .single();
+
+      if (orgError) throw orgError;
+
+      // Update the user's profile with the new organization_id
+      const user = await supabase.auth.getUser();
+      if (user.data.user) {
+        const { error: profileError } = await supabase
+          .from("profiles")
+          .update({ 
+            organization_id: orgData.id,
+            is_organization_admin: true  // Make the creator an admin
+          })
+          .eq("id", user.data.user.id);
+
+        if (profileError) throw profileError;
+      }
+
+      return orgData;
+    });
   },
 
   async update(id: string, data: any) {
-    toast({
-      title: "Database restructuring in progress",
-      description: "The organizations functionality is temporarily disabled.",
+    return safeQuery(async () => {
+      const { data: updatedData, error } = await supabase
+        .from("organizations")
+        .update(data)
+        .eq("id", id)
+        .select()
+        .single();
+
+      if (error) throw error;
+      return updatedData;
     });
-    return data;
   }
 };
 
-// Client Settings API - Stubbed out since we removed the table
+// Client Settings API
 export const clientSettingsApi = {
   async getByOrganizationId(organizationId: string) {
-    toast({
-      title: "Database restructuring in progress",
-      description: "The client settings functionality is temporarily disabled.",
-    });
     return null;
   },
 
   async getAll(organizationId: string) {
-    toast({
-      title: "Database restructuring in progress",
-      description: "The client settings functionality is temporarily disabled.",
-    });
     return [];
   },
 
   async update(id: string, data: any) {
-    toast({
-      title: "Database restructuring in progress",
-      description: "The client settings functionality is temporarily disabled.",
-    });
     return data;
   },
 
   async upsert(data: any) {
-    toast({
-      title: "Database restructuring in progress",
-      description: "The client settings functionality is temporarily disabled.",
-    });
     return data;
   },
 
   async delete(id: string) {
-    toast({
-      title: "Database restructuring in progress",
-      description: "The client settings functionality is temporarily disabled.",
-    });
     return true;
   }
 };
 
-// Form Templates API - Stubbed out since we removed the table
+// Form Templates API
 export const formTemplatesApi = {
   async getAll() {
-    toast({
-      title: "Database restructuring in progress",
-      description: "The form templates functionality is temporarily disabled.",
-    });
     return [];
   },
 
   async getById(id: string) {
-    toast({
-      title: "Database restructuring in progress",
-      description: "The form templates functionality is temporarily disabled.",
-    });
     return null;
   },
 
   async create(data: any) {
-    toast({
-      title: "Database restructuring in progress",
-      description: "The form templates functionality is temporarily disabled.",
-    });
     return data;
   },
 
   async update(id: string, data: any) {
-    toast({
-      title: "Database restructuring in progress",
-      description: "The form templates functionality is temporarily disabled.",
-    });
     return data;
   },
 
   async delete(id: string) {
-    toast({
-      title: "Database restructuring in progress",
-      description: "The form templates functionality is temporarily disabled.",
-    });
     return true;
   }
 };

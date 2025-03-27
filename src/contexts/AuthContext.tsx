@@ -14,6 +14,7 @@ type UserProfile = {
   role: "applicant" | "representative" | "admin";
   is_organization_admin: boolean;
   individual_mode: boolean;
+  organization_id: string | null;
 };
 
 type AuthContextType = {
