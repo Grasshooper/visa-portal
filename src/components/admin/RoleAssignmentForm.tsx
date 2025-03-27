@@ -20,10 +20,12 @@ type UserData = {
 
 type RoleAssignmentFormProps = {
   user: UserData;
-  onUpdateSuccess: () => void;
+  onUpdateSuccess?: () => void;
+  onSubmit?: (userId: string, role: string, isAdmin: boolean) => Promise<void>;
+  onCancel?: () => void;
 };
 
-export function RoleAssignmentForm({ user, onUpdateSuccess }: RoleAssignmentFormProps) {
+export function RoleAssignmentForm({ user, onUpdateSuccess, onSubmit, onCancel }: RoleAssignmentFormProps) {
   const [role, setRole] = useState<"applicant" | "representative" | "admin">(user.role);
   const [isAdmin, setIsAdmin] = useState(user.is_organization_admin);
   const [loading, setLoading] = useState(false);
@@ -32,22 +34,28 @@ export function RoleAssignmentForm({ user, onUpdateSuccess }: RoleAssignmentForm
   const handleRoleChange = async () => {
     setLoading(true);
     try {
-      const { error } = await supabase
-        .from('profiles')
-        .update({
-          role,
-          is_organization_admin: isAdmin,
-        })
-        .eq('id', user.id);
+      if (onSubmit) {
+        // Use onSubmit if provided
+        await onSubmit(user.id, role, isAdmin);
+      } else {
+        // Fallback to direct update if no onSubmit provided
+        const { error } = await supabase
+          .from('profiles')
+          .update({
+            role,
+            is_organization_admin: isAdmin,
+          })
+          .eq('id', user.id);
 
-      if (error) throw error;
+        if (error) throw error;
 
-      toast({
-        title: "Role updated",
-        description: `Updated role for ${user.email} to ${role}${isAdmin ? " with admin rights" : ""}`,
-      });
-      
-      onUpdateSuccess();
+        toast({
+          title: "Role updated",
+          description: `Updated role for ${user.email} to ${role}${isAdmin ? " with admin rights" : ""}`,
+        });
+        
+        if (onUpdateSuccess) onUpdateSuccess();
+      }
     } catch (error: any) {
       toast({
         variant: "destructive",
@@ -146,9 +154,16 @@ export function RoleAssignmentForm({ user, onUpdateSuccess }: RoleAssignmentForm
             )}
           </div>
 
-          <Button onClick={handleRoleChange} disabled={loading} className="w-full">
-            {loading ? "Updating..." : "Update Role"}
-          </Button>
+          <div className="flex justify-end space-x-2">
+            {onCancel && (
+              <Button variant="outline" onClick={onCancel} disabled={loading}>
+                Cancel
+              </Button>
+            )}
+            <Button onClick={handleRoleChange} disabled={loading}>
+              {loading ? "Updating..." : "Update Role"}
+            </Button>
+          </div>
         </div>
       </CardContent>
     </Card>
