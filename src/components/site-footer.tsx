@@ -12,9 +12,9 @@ export function SiteFooter() {
               className="flex items-center gap-2 font-semibold text-lg tracking-tight"
             >
               <div className="h-8 w-8 rounded-full bg-primary flex items-center justify-center text-primary-foreground font-bold">
-                IM
+                v4U
               </div>
-              <span>ImmigrationManager</span>
+              <span>visa4U</span>
             </Link>
             <p className="text-sm text-muted-foreground max-w-xs">
               Streamlining immigration processes with modern technology and exceptional user experience.
@@ -78,8 +78,8 @@ export function SiteFooter() {
                 San Francisco, CA 94103
               </li>
               <li>
-                <a href="mailto:support@immigrationmanager.com" className="text-muted-foreground hover:text-foreground transition-colors">
-                  support@immigrationmanager.com
+                <a href="mailto:support@visa4u.com" className="text-muted-foreground hover:text-foreground transition-colors">
+                  support@visa4u.com
                 </a>
               </li>
               <li>
@@ -92,7 +92,7 @@ export function SiteFooter() {
         </div>
         <div className="mt-12 pt-8 border-t border-border/40 flex flex-col sm:flex-row justify-between items-center">
           <p className="text-sm text-muted-foreground">
-            &copy; {new Date().getFullYear()} ImmigrationManager. All rights reserved.
+            &copy; {new Date().getFullYear()} visa4U. All rights reserved.
           </p>
           <div className="flex items-center gap-6 mt-4 sm:mt-0">
             <Link to="#" className="text-muted-foreground hover:text-foreground transition-colors">

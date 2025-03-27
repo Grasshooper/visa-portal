@@ -241,7 +241,7 @@ const Index = () => {
           <div className="text-center mb-12">
             <h2 className="text-3xl md:text-4xl font-bold mb-4">Trusted By Immigration Professionals</h2>
             <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-              See what our users have to say about the ImmigrationManager platform.
+              See what our users have to say about the visa4U platform.
             </p>
           </div>
           
@@ -255,7 +255,7 @@ const Index = () => {
                 <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="#1a73e8" stroke="none"><path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21 12 17.27z"/></svg>
               </div>
               <p className="text-muted-foreground mb-6">
-                "ImmigrationManager has completely transformed our workflow. The intuitive interface and powerful features have increased our efficiency by 40%."
+                "visa4U has completely transformed our workflow. The intuitive interface and powerful features have increased our efficiency by 40%."
               </p>
               <div className="flex items-center gap-3">
                 <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center">
@@ -323,7 +323,7 @@ const Index = () => {
               Ready to Transform Your Immigration Management?
             </h2>
             <p className="text-lg text-muted-foreground mb-8 max-w-2xl mx-auto">
-              Join thousands of immigration professionals already using ImmigrationManager to streamline their processes and improve efficiency.
+              Join thousands of immigration professionals already using visa4U to streamline their processes and improve efficiency.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
               <Button size="lg" asChild>

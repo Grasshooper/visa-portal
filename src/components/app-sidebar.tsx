@@ -123,7 +123,7 @@ export function AppSidebar() {
           className="flex items-center gap-2 font-semibold text-base"
         >
           <div className="h-8 w-8 rounded-full bg-primary flex items-center justify-center text-primary-foreground font-bold">
-            IM
+            v4U
           </div>
           <span className="font-medium">visa4U</span>
         </Link>
